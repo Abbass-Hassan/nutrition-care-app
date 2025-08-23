@@ -1,63 +1,52 @@
+import { useState, useEffect } from 'react'
+import SignIn from './pages/SignIn'
+import SignUp from './pages/SignUp'
 import './App.css'
 
 function App() {
-  return (
-    <div className="app">
-      <header className="header">
-        <h1 className="text-primary">🍎 NutritionCare</h1>
-      </header>
+  const [currentPage, setCurrentPage] = useState('signin')
 
-      <main className="main">
-        <div className="container">
-          <h2>Theme Colors</h2>
-          
-          <div className="color-grid">
-            <div className="color-item">
-              <div className="color-swatch bg-primary"></div>
-              <h3>Primary</h3>
-              <p>#4CAF50</p>
-              <p>Fresh Green - health, vitality</p>
-            </div>
-            
-            <div className="color-item">
-              <div className="color-swatch bg-secondary"></div>
-              <h3>Secondary</h3>
-              <p>#81C784</p>
-              <p>Light Green - support/freshness</p>
-            </div>
-            
-            <div className="color-item">
-              <div className="color-swatch bg-accent"></div>
-              <h3>Accent</h3>
-              <p>#FF9800</p>
-              <p>Orange - appetite & energy</p>
-            </div>
-            
-            <div className="color-item">
-              <div className="color-swatch bg-light"></div>
-              <h3>Background</h3>
-              <p>#F5F5F5</p>
-              <p>Light Gray - clean, professional</p>
-            </div>
-          </div>
+  // Update URL when page changes
+  useEffect(() => {
+    const path = currentPage === 'signup' ? '/signup' : '/signin'
+    window.history.pushState({}, '', path)
+  }, [currentPage])
 
-          <div className="button-showcase">
-            <h3>Button Examples</h3>
-            <button className="btn-primary">Primary Button</button>
-            <button className="btn-secondary">Secondary Button</button>
-            <button className="btn-accent">Accent Button</button>
-            <button className="btn-outline">Outline Button</button>
-          </div>
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname
+      if (path === '/signup') {
+        setCurrentPage('signup')
+      } else {
+        setCurrentPage('signin')
+      }
+    }
 
-          <div className="card">
-            <h3>Sample Card</h3>
-            <p>This is a sample card using the theme colors.</p>
-            <button className="btn-primary">Action</button>
-          </div>
-        </div>
-      </main>
-    </div>
-  )
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  // Set initial page based on URL
+  useEffect(() => {
+    const path = window.location.pathname
+    if (path === '/signup') {
+      setCurrentPage('signup')
+    } else {
+      setCurrentPage('signin')
+    }
+  }, [])
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'signup':
+        return <SignUp onNavigate={setCurrentPage} />
+      default:
+        return <SignIn onNavigate={setCurrentPage} />
+      }
+  }
+
+  return renderPage()
 }
 
 export default App
