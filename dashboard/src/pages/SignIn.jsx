@@ -14,10 +14,38 @@ const SignIn = ({ onNavigate }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Dietitian sign in:', formData);
-    // Handle dietitian sign in logic here
+    
+    try {
+      const response = await fetch('http://localhost:8000/api/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          user_type: 'dietitian' // Dashboard = dietitian
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log('Dietitian signed in successfully:', data);
+        // Store token and redirect to dashboard
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        // Reload the page to trigger authentication state
+        window.location.reload();
+      } else {
+        alert(data.message || 'Sign in failed');
+      }
+    } catch (error) {
+      console.error('Sign in error:', error);
+      alert('Sign in failed. Please try again.');
+    }
   };
 
   const handleSignUpClick = (e) => {
@@ -27,15 +55,15 @@ const SignIn = ({ onNavigate }) => {
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
+      <div className="auth-card compact">
+        <div className="auth-header compact">
           <h1 className="text-primary">🍎 NutritionCare</h1>
           <h2>Welcome Back, Dietitian</h2>
           <p>Sign in to your professional dashboard to manage your clients</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
+        <form onSubmit={handleSubmit} className="auth-form compact">
+          <div className="form-group compact">
             <label htmlFor="email">Professional Email</label>
             <input
               type="email"
@@ -48,7 +76,7 @@ const SignIn = ({ onNavigate }) => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="form-group compact">
             <label htmlFor="password">Password</label>
             <input
               type="password"
@@ -69,12 +97,12 @@ const SignIn = ({ onNavigate }) => {
             <a href="#" className="forgot-password">Forgot password?</a>
           </div>
 
-          <button type="submit" className="btn-primary auth-submit">
+          <button type="submit" className="btn-primary auth-submit compact">
             Sign In to Dashboard
           </button>
         </form>
 
-        <div className="auth-footer">
+        <div className="auth-footer compact">
           <p>
             New to NutritionCare?{' '}
             <a href="#" className="auth-link" onClick={handleSignUpClick}>Register as Dietitian</a>
