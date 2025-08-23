@@ -1,0 +1,38 @@
+/* Essential color theme for Nutrition Care App */
+:root {
+  /* Primary colors */
+  --color-primary: #4CAF50;
+  --color-primary-light: #66BB6A;
+  --color-primary-dark: #388E3C;
+  
+  /* Secondary colors */
+  --color-secondary: #81C784;
+  --color-secondary-light: #A5D6A7;
+  --color-secondary-dark: #66BB6A;
+  
+  /* Accent colors */
+  --color-accent: #FF9800;
+  --color-accent-light: #FFB74D;
+  --color-accent-dark: #F57C00;
+  
+  /* Background colors */
+  --color-background: #F5F5F5;
+  --color-background-light: #FFFFFF;
+  --color-background-dark: #E0E0E0;
+  
+  /* Text colors */
+  --color-text: #212121;
+  --color-text-secondary: #757575;
+  --color-text-light: #9E9E9E;
+  
+  /* Status colors */
+  --color-success: #4CAF50;
+  --color-warning: #FF9800;
+  --color-error: #F44336;
+  --color-info: #2196F3;
+  
+  /* Border colors */
+  --color-border: #E0E0E0;
+  --color-border-light: #F5F5F5;
+  --color-border-dark: #BDBDBD;
+} 
