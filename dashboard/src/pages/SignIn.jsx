@@ -57,7 +57,9 @@ const SignIn = ({ onNavigate }) => {
     <div className="auth-container">
       <div className="auth-card compact">
         <div className="auth-header compact">
-          <h1 className="text-primary">🍎 NutritionCare</h1>
+          <h1 className="text-primary">
+            <span className="logo-icon">🍎</span> NutritionCare
+          </h1>
           <h2>Welcome Back, Dietitian</h2>
           <p>Sign in to your professional dashboard to manage your clients</p>
         </div>

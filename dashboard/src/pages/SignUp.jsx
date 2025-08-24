@@ -66,7 +66,9 @@ const SignUp = ({ onNavigate }) => {
     <div className="auth-container">
       <div className="auth-card compact signup">
         <div className="auth-header compact signup">
-          <h1 className="text-primary">🍎 NutritionCare</h1>
+          <h1 className="text-primary">
+            <span className="logo-icon">🍎</span> NutritionCare
+          </h1>
           <h2>Join Our Professional Network</h2>
           <p>Register as a dietitian to start managing your clients</p>
         </div>

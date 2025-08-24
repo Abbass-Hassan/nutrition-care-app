@@ -15,11 +15,20 @@ class AuthController extends Controller
      */
     public function signIn(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required|string',
-            'user_type' => 'required|in:dietitian,client',
-        ]);
+        // Determine validation rules based on user type
+        if ($request->user_type === 'client') {
+            $validator = Validator::make($request->all(), [
+                'username' => 'required|string',
+                'password' => 'required|string',
+                'user_type' => 'required|in:dietitian,client',
+            ]);
+        } else {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email',
+                'password' => 'required|string',
+                'user_type' => 'required|in:dietitian,client',
+            ]);
+        }
 
         if ($validator->fails()) {
             return response()->json([
@@ -29,7 +38,18 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $credentials = $request->only('email', 'password');
+        // Prepare credentials based on user type
+        if ($request->user_type === 'client') {
+            $credentials = [
+                'username' => $request->username,
+                'password' => $request->password
+            ];
+        } else {
+            $credentials = [
+                'email' => $request->email,
+                'password' => $request->password
+            ];
+        }
         
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
@@ -52,6 +72,7 @@ class AuthController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'username' => $user->username,
                     'user_type' => $user->user_type,
                     'created_at' => $user->created_at
                 ],
@@ -66,16 +87,27 @@ class AuthController extends Controller
     }
 
     /**
-     * Sign Up (for both dietitians and clients)
+     * Sign Up (dietitians can register themselves, or create client accounts)
      */
     public function signUp(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'user_type' => 'required|in:dietitian,client',
-        ]);
+        // Different validation rules based on user type
+        if ($request->user_type === 'client') {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'username' => 'required|string|max:255|unique:users,username',
+                'password' => 'required|string|min:8|confirmed',
+                'user_type' => 'required|in:dietitian,client',
+                'email' => 'nullable|email|unique:users,email', // Optional for clients
+            ]);
+        } else {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email',
+                'password' => 'required|string|min:8|confirmed',
+                'user_type' => 'required|in:dietitian,client',
+            ]);
+        }
 
         if ($validator->fails()) {
             return response()->json([
@@ -85,12 +117,29 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'user_type' => $request->user_type,
-        ]);
+        // Prepare user data based on user type
+        if ($request->user_type === 'client') {
+            $userData = [
+                'name' => $request->name,
+                'username' => $request->username,
+                'password' => Hash::make($request->password),
+                'user_type' => $request->user_type,
+            ];
+            
+            // Add email if provided
+            if ($request->email) {
+                $userData['email'] = $request->email;
+            }
+        } else {
+            $userData = [
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'user_type' => $request->user_type,
+            ];
+        }
+
+        $user = User::create($userData);
 
         $token = $user->createToken($request->user_type . '-token')->plainTextToken;
 
@@ -101,6 +150,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'username' => $user->username,
                 'user_type' => $user->user_type,
                 'created_at' => $user->created_at
             ],
@@ -132,5 +182,87 @@ class AuthController extends Controller
             'success' => true,
             'user' => $user
         ]);
+    }
+
+    /**
+     * Get clients for dietitians
+     */
+    public function getClients(Request $request)
+    {
+        $user = $request->user();
+        
+        // Only dietitians can access this endpoint
+        if (!$user->isDietitian()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only dietitians can view clients.'
+            ], 403);
+        }
+
+        $clients = User::where('user_type', 'client')
+                      ->orderBy('created_at', 'desc')
+                      ->get(['id', 'name', 'username', 'email', 'created_at']);
+
+        return response()->json([
+            'success' => true,
+            'clients' => $clients
+        ]);
+    }
+
+    // Get single client by ID
+    public function getClient($id)
+    {
+        try {
+            $client = User::where('user_type', 'client')->findOrFail($id);
+            
+            return response()->json([
+                'success' => true,
+                'client' => $client
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Client not found'
+            ], 404);
+        }
+    }
+
+    // Update client information
+    public function updateClient(Request $request, $id)
+    {
+        try {
+            $client = User::where('user_type', 'client')->findOrFail($id);
+            
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'email' => 'nullable|email|unique:users,email,' . $id,
+                'subscription_type' => 'required|in:paid,free'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $client->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'subscription_type' => $request->subscription_type
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Client updated successfully',
+                'client' => $client
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Client not found'
+            ], 404);
+        }
     }
 } 

@@ -317,6 +317,15 @@ input, textarea, select {
 /* Utility Classes */
 .text-primary {
   color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 36px;
+  flex-shrink: 0;
 }
 
 .btn-primary {

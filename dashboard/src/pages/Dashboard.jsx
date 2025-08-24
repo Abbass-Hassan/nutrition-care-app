@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { MdPeople, MdDashboard, MdLogout, MdArrowBack } from 'react-icons/md';
+import ClientManagement from '../components/ClientManagement';
+import ClientProfile from '../components/ClientProfile';
+import ClientEdit from '../components/ClientEdit';
 import './Dashboard.css';
 
 const Dashboard = ({ onSignOut }) => {
   const [user, setUser] = useState(null);
-  const [stats, setStats] = useState({
-    totalClients: 24,
-    activeClients: 18,
-    pendingReports: 5,
-    monthlyRevenue: 3200
+  const [currentView, setCurrentView] = useState('clients'); // 'clients', 'create-client', 'view-client', 'edit-client'
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [clientStats, setClientStats] = useState({
+    totalClients: 0,
+    newThisMonth: 0,
+    paidSubscriptions: 0
   });
 
   useEffect(() => {
@@ -16,7 +21,47 @@ const Dashboard = ({ onSignOut }) => {
     if (userData) {
       setUser(JSON.parse(userData));
     }
+    
+    // Fetch client statistics
+    fetchClientStats();
   }, []);
+
+  const fetchClientStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8000/api/clients', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const clients = data.clients || [];
+        
+        // Calculate stats
+        const now = new Date();
+        const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        
+        const newThisMonth = clients.filter(client => 
+          new Date(client.created_at) >= thisMonth
+        ).length;
+        
+        const paidSubscriptions = clients.filter(client => 
+          (client.subscription_type || 'paid') === 'paid'
+        ).length;
+        
+        setClientStats({
+          totalClients: clients.length,
+          newThisMonth,
+          paidSubscriptions
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching client stats:', error);
+    }
+  };
 
   const handleSignOut = () => {
     localStorage.removeItem('token');
@@ -24,124 +69,145 @@ const Dashboard = ({ onSignOut }) => {
     onSignOut();
   };
 
+  const handleCreateClient = () => {
+    setCurrentView('create-client');
+  };
+
+  const handleViewClient = (client) => {
+    setSelectedClient(client);
+    setCurrentView('view-client');
+  };
+
+  const handleEditClient = (client) => {
+    setSelectedClient(client);
+    setCurrentView('edit-client');
+  };
+
+  const handleBackToClients = () => {
+    setCurrentView('clients');
+    setSelectedClient(null);
+    fetchClientStats(); // Refresh stats when returning to clients list
+  };
+
+  const handleBackToProfile = () => {
+    setCurrentView('view-client');
+  };
+
+  const handleClientUpdated = (updatedClient) => {
+    setSelectedClient(updatedClient);
+    fetchClientStats(); // Refresh stats after update
+  };
+
   if (!user) {
-    return <div>Loading...</div>;
+    return <div className="loading">Loading...</div>;
   }
+
+  const renderContent = () => {
+    switch (currentView) {
+      case 'create-client':
+        return (
+          <div className="create-client-page">
+            <div className="page-header">
+              <button className="back-button" onClick={handleBackToClients}>
+                <MdArrowBack className="back-icon" />
+                Back to Clients
+              </button>
+              <h1 className="page-title">Create New Client Account</h1>
+            </div>
+            
+            <div className="create-client-form">
+              <ClientManagement 
+                onStatsUpdate={fetchClientStats} 
+                viewMode="create"
+                onBack={handleBackToClients}
+              />
+            </div>
+          </div>
+        );
+      
+      case 'view-client':
+        return (
+          <ClientProfile
+            clientId={selectedClient.id}
+            onBack={handleBackToClients}
+            onEdit={handleEditClient}
+          />
+        );
+      
+      case 'edit-client':
+        return (
+          <ClientEdit
+            client={selectedClient}
+            onBack={handleBackToProfile}
+            onSave={handleClientUpdated}
+          />
+        );
+      
+      default: // 'clients'
+        return (
+          <ClientManagement 
+            onStatsUpdate={fetchClientStats} 
+            onCreateClient={handleCreateClient}
+            onViewClient={handleViewClient}
+            onEditClient={handleEditClient}
+            viewMode="list"
+          />
+        );
+    }
+  };
+
+  const getPageTitle = () => {
+    switch (currentView) {
+      case 'create-client':
+        return 'Create New Client';
+      case 'view-client':
+        return selectedClient ? `${selectedClient.name} - Profile` : 'Client Profile';
+      case 'edit-client':
+        return selectedClient ? `Edit ${selectedClient.name}` : 'Edit Client';
+      default:
+        return 'Client Management';
+    }
+  };
 
   return (
     <div className="dashboard-container">
-      <header className="dashboard-header">
-        <div className="header-content">
-          <div className="header-left">
-            <h1 className="logo">🍎 NutritionCare</h1>
-            <p className="welcome-text">Welcome back, {user.name}!</p>
-          </div>
-          <div className="header-right">
-            <button className="btn-secondary" onClick={handleSignOut}>
-              Sign Out
-            </button>
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <div className="logo">
+            <span className="logo-icon">🍎</span>
+            <span className="logo-text">NutritionCare</span>
           </div>
         </div>
-      </header>
-
-      <main className="dashboard-main">
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon">👥</div>
-            <div className="stat-content">
-              <h3 className="stat-number">{stats.totalClients}</h3>
-              <p className="stat-label">Total Clients</p>
+        
+        <nav className="sidebar-nav">
+          <div className={`nav-item ${currentView.includes('client') ? 'active' : ''}`}>
+            <MdPeople className="nav-icon" />
+            <span>Client Management</span>
+          </div>
+        </nav>
+        
+        <div className="sidebar-footer">
+          <div className="user-info">
+            <div className="user-avatar">
+              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+            </div>
+            <div className="user-details">
+              <div className="user-name">{user.name}</div>
+              <div className="user-role">Dietitian</div>
             </div>
           </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon">✅</div>
-            <div className="stat-content">
-              <h3 className="stat-number">{stats.activeClients}</h3>
-              <p className="stat-label">Active Clients</p>
-            </div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon">📋</div>
-            <div className="stat-content">
-              <h3 className="stat-number">{stats.pendingReports}</h3>
-              <p className="stat-label">Pending Reports</p>
-            </div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon">💰</div>
-            <div className="stat-content">
-              <h3 className="stat-number">${stats.monthlyRevenue}</h3>
-              <p className="stat-label">Monthly Revenue</p>
-            </div>
-          </div>
+          <button className="sign-out-btn" onClick={handleSignOut}>
+            <MdLogout className="logout-icon" />
+            <span>Sign Out</span>
+          </button>
         </div>
+      </aside>
 
-        <div className="dashboard-content">
-          <div className="content-section">
-            <h2 className="section-title">Recent Clients</h2>
-            <div className="clients-list">
-              <div className="client-item">
-                <div className="client-avatar">👤</div>
-                <div className="client-info">
-                  <h4 className="client-name">Sarah Johnson</h4>
-                  <p className="client-status">Active - Weight Loss Program</p>
-                </div>
-                <div className="client-actions">
-                  <button className="btn-small">View</button>
-                </div>
-              </div>
-              
-              <div className="client-item">
-                <div className="client-avatar">👤</div>
-                <div className="client-info">
-                  <h4 className="client-name">Mike Chen</h4>
-                  <p className="client-status">Active - Muscle Building</p>
-                </div>
-                <div className="client-actions">
-                  <button className="btn-small">View</button>
-                </div>
-              </div>
-              
-              <div className="client-item">
-                <div className="client-avatar">👤</div>
-                <div className="client-info">
-                  <h4 className="client-name">Emily Davis</h4>
-                  <p className="client-status">Pending - Initial Consultation</p>
-                </div>
-                <div className="client-actions">
-                  <button className="btn-small">Review</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="content-section">
-            <h2 className="section-title">Quick Actions</h2>
-            <div className="actions-grid">
-              <button className="action-button">
-                <span className="action-icon">➕</span>
-                <span className="action-text">Add New Client</span>
-              </button>
-              
-              <button className="action-button">
-                <span className="action-icon">📊</span>
-                <span className="action-text">Generate Reports</span>
-              </button>
-              
-              <button className="action-button">
-                <span className="action-icon">📅</span>
-                <span className="action-text">Schedule Consultation</span>
-              </button>
-              
-              <button className="action-button">
-                <span className="action-icon">📝</span>
-                <span className="action-text">Create Meal Plan</span>
-              </button>
-            </div>
-          </div>
+      {/* Main Content */}
+      <main className="main-content">
+        <div className="content-wrapper">
+          {renderContent()}
         </div>
       </main>
     </div>

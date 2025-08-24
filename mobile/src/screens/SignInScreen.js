@@ -14,7 +14,7 @@ import { colors } from '../theme';
 
 const SignInScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
   });
 
@@ -26,6 +26,16 @@ const SignInScreen = ({ navigation }) => {
   };
 
   const handleSubmit = async () => {
+    if (!formData.username.trim()) {
+      Alert.alert('Error', 'Please enter your username');
+      return;
+    }
+
+    if (!formData.password.trim()) {
+      Alert.alert('Error', 'Please enter your password');
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:8000/api/signin', {
         method: 'POST',
@@ -33,7 +43,7 @@ const SignInScreen = ({ navigation }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: formData.email,
+          username: formData.username,
           password: formData.password,
           user_type: 'client' // Mobile = client
         }),
@@ -47,16 +57,12 @@ const SignInScreen = ({ navigation }) => {
         // You can store the token here if needed
         navigation.navigate('Main');
       } else {
-        Alert.alert('Error', data.message || 'Sign in failed');
+        Alert.alert('Error', data.message || 'Sign in failed. Please check your credentials.');
       }
     } catch (error) {
       console.error('Sign in error:', error);
       Alert.alert('Error', 'Sign in failed. Please try again.');
     }
-  };
-
-  const handleSignUp = () => {
-    navigation.navigate('SignUp');
   };
 
   return (
@@ -67,21 +73,22 @@ const SignInScreen = ({ navigation }) => {
       >
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.logo}>🍎 NutritionCare</Text>
+            <Text style={styles.logo}>⚕ NutritionCare</Text>
             <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to track your nutrition journey</Text>
+            <Text style={styles.subtitle}>
+              Sign in with the credentials provided by your dietitian
+            </Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>Username</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your email"
+                placeholder="Enter your username"
                 placeholderTextColor={colors.textLight}
-                value={formData.email}
-                onChangeText={(value) => handleChange('email', value)}
-                keyboardType="email-address"
+                value={formData.username}
+                onChangeText={(value) => handleChange('username', value)}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="next"
@@ -106,12 +113,6 @@ const SignInScreen = ({ navigation }) => {
               />
             </View>
 
-            <View style={styles.formOptions}>
-              <TouchableOpacity style={styles.forgotPassword}>
-                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-              </TouchableOpacity>
-            </View>
-
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
               <Text style={styles.submitButtonText}>Sign In</Text>
             </TouchableOpacity>
@@ -119,10 +120,7 @@ const SignInScreen = ({ navigation }) => {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              Don't have an account?{' '}
-              <Text style={styles.link} onPress={handleSignUp}>
-                Sign up
-              </Text>
+              Need help? Contact your dietitian for assistance.
             </Text>
           </View>
         </View>
@@ -138,7 +136,13 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', marginTop: 60, marginBottom: 40 },
   logo: { fontSize: 32, fontWeight: 'bold', color: colors.primary, marginBottom: 20 },
   title: { fontSize: 28, fontWeight: '700', color: colors.text, marginBottom: 12, textAlign: 'center' },
-  subtitle: { fontSize: 17, color: colors.textSecondary, textAlign: 'center', lineHeight: 22 },
+  subtitle: { 
+    fontSize: 17, 
+    color: colors.textSecondary, 
+    textAlign: 'center', 
+    lineHeight: 22,
+    paddingHorizontal: 20
+  },
   form: { flex: 1, justifyContent: 'center', paddingHorizontal: 10 },
   formGroup: { marginBottom: 28 },
   label: { fontSize: 17, fontWeight: '600', color: colors.text, marginBottom: 12 },
@@ -156,14 +160,12 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  formOptions: { alignItems: 'flex-end', marginBottom: 35 },
-  forgotPassword: { padding: 8 },
-  forgotPasswordText: { color: colors.primary, fontSize: 16, fontWeight: '600' },
   submitButton: {
     backgroundColor: colors.primary,
     borderRadius: 12,
     padding: 20,
     alignItems: 'center',
+    marginTop: 20,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
@@ -172,8 +174,12 @@ const styles = StyleSheet.create({
   },
   submitButtonText: { color: colors.backgroundLight, fontSize: 19, fontWeight: '600' },
   footer: { alignItems: 'center', marginBottom: 40 },
-  footerText: { color: colors.textSecondary, fontSize: 16 },
-  link: { color: colors.primary, fontWeight: '600' },
+  footerText: { 
+    color: colors.textSecondary, 
+    fontSize: 16, 
+    textAlign: 'center',
+    paddingHorizontal: 20
+  },
 });
 
 export default SignInScreen; 

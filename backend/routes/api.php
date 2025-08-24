@@ -21,8 +21,12 @@ Route::post('/signup', [AuthController::class, 'signUp']);
 
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/signout', [AuthController::class, 'signOut']);
-    Route::get('/profile', [AuthController::class, 'profile']);
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    Route::get('/clients', [AuthController::class, 'getClients']);
+    Route::get('/clients/{id}', [AuthController::class, 'getClient']);
+    Route::put('/clients/{id}', [AuthController::class, 'updateClient']);
 });
 
 // Health check route
