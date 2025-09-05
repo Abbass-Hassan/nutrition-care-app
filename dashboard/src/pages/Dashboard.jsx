@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { MdPeople, MdDashboard, MdLogout, MdArrowBack } from 'react-icons/md';
+import { MdPeople, MdDashboard, MdLogout, MdArrowBack, MdInventory } from 'react-icons/md';
 import ClientManagement from '../components/ClientManagement';
 import ClientProfile from '../components/ClientProfile';
 import ClientEdit from '../components/ClientEdit';
 import './Dashboard.css';
-
+import FoodManagement from '../components/FoodManagement';
 const Dashboard = ({ onSignOut }) => {
   const [user, setUser] = useState(null);
-  const [currentView, setCurrentView] = useState('clients'); // 'clients', 'create-client', 'view-client', 'edit-client'
+  const [currentView, setCurrentView] = useState('clients'); // 'clients', 'create-client', 'view-client', 'edit-client', 'foods', 'create-food'
   const [selectedClient, setSelectedClient] = useState(null);
   const [clientStats, setClientStats] = useState({
     totalClients: 0,
@@ -98,6 +98,18 @@ const Dashboard = ({ onSignOut }) => {
     fetchClientStats(); // Refresh stats after update
   };
 
+  // Items handlers
+  const handleFoodsNavigation = () => {
+    setCurrentView('foods');
+  };
+
+  const handleCreateFood = () => {
+    setCurrentView('create-food');
+  };
+
+  const handleBackToFoods = () => {
+    setCurrentView('foods');
+  };
   if (!user) {
     return <div className="loading">Loading...</div>;
   }
@@ -143,6 +155,32 @@ const Dashboard = ({ onSignOut }) => {
           />
         );
       
+      case 'foods':
+        return (
+          <FoodManagement 
+            onCreateFood={handleCreateFood}
+            viewMode="list"
+          />
+        );
+
+      case 'create-food':
+        return (
+          <div className="create-client-page">
+            <div className="page-header">
+              <button className="back-button" onClick={handleBackToFoods}>
+                <MdArrowBack className="back-icon" />
+                Back to Foods
+              </button>
+              <h1 className="page-title">Create New Food</h1>
+            </div>
+            
+            <div className="create-client-form">
+              <div className="empty-state">
+                <p>Food creation form will be implemented here.</p>
+              </div>
+            </div>
+          </div>
+        );
       default: // 'clients'
         return (
           <ClientManagement 
@@ -164,8 +202,11 @@ const Dashboard = ({ onSignOut }) => {
         return selectedClient ? `${selectedClient.name} - Profile` : 'Client Profile';
       case 'edit-client':
         return selectedClient ? `Edit ${selectedClient.name}` : 'Edit Client';
-      default:
-        return 'Client Management';
+      case 'foods':
+        return 'Food Management';
+      case 'create-food':
+        return 'Create New Food';      default:
+        return currentView.includes('food') ? 'Food Management' : 'Client Management';
     }
   };
 
@@ -181,9 +222,13 @@ const Dashboard = ({ onSignOut }) => {
         </div>
         
         <nav className="sidebar-nav">
-          <div className={`nav-item ${currentView.includes('client') ? 'active' : ''}`}>
+          <div className={`nav-item ${currentView.includes('client') ? 'active' : ''}`} onClick={() => setCurrentView('clients')}>
             <MdPeople className="nav-icon" />
             <span>Client Management</span>
+          </div>
+          <div className={`nav-item ${currentView.includes('food') ? 'active' : ''}`} onClick={handleFoodsNavigation}>
+            <MdInventory className="nav-icon" />
+            <span>Food Management</span>
           </div>
         </nav>
         
