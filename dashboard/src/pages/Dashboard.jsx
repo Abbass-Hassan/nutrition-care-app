@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { MdPeople, MdDashboard, MdLogout, MdArrowBack, MdInventory } from 'react-icons/md';
+import { MdPeople, MdDashboard, MdLogout, MdArrowBack, MdInventory, MdChat } from 'react-icons/md';
 import ClientManagement from '../components/ClientManagement';
 import ClientProfile from '../components/ClientProfile';
 import ClientEdit from '../components/ClientEdit';
 import FoodManagement from '../components/FoodManagement';
 import FoodProfile from '../components/FoodProfile';
 import FoodEdit from '../components/FoodEdit';
+import Chat from '../components/Chat';
 import './Dashboard.css';
 
 const Dashboard = ({ onSignOut }) => {
@@ -104,6 +105,10 @@ const Dashboard = ({ onSignOut }) => {
 
   const handleClientsNavigation = () => {
     setCurrentView('clients');
+  };
+
+  const handleChatNavigation = () => {
+    setCurrentView('chat');
   };
 
   const handleCreateFood = () => {
@@ -235,6 +240,11 @@ const Dashboard = ({ onSignOut }) => {
           />
         );
       
+      case 'chat':
+        return (
+          <Chat />
+        );
+      
       default:
         return (
           <ClientManagement 
@@ -266,6 +276,10 @@ const Dashboard = ({ onSignOut }) => {
           <div className={`nav-item ${currentView.includes('food') ? 'active' : ''}`} onClick={handleFoodsNavigation}>
             <MdInventory className="nav-icon" />
             <span>Food Management</span>
+          </div>
+          <div className={`nav-item ${currentView === 'chat' ? 'active' : ''}`} onClick={handleChatNavigation}>
+            <MdChat className="nav-icon" />
+            <span>Chat</span>
           </div>
         </nav>
         
