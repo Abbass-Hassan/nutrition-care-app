@@ -3,12 +3,16 @@ import { MdPeople, MdDashboard, MdLogout, MdArrowBack, MdInventory } from 'react
 import ClientManagement from '../components/ClientManagement';
 import ClientProfile from '../components/ClientProfile';
 import ClientEdit from '../components/ClientEdit';
-import './Dashboard.css';
 import FoodManagement from '../components/FoodManagement';
+import FoodProfile from '../components/FoodProfile';
+import FoodEdit from '../components/FoodEdit';
+import './Dashboard.css';
+
 const Dashboard = ({ onSignOut }) => {
   const [user, setUser] = useState(null);
-  const [currentView, setCurrentView] = useState('clients'); // 'clients', 'create-client', 'view-client', 'edit-client', 'foods', 'create-food'
+  const [currentView, setCurrentView] = useState('clients');
   const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedFood, setSelectedFood] = useState(null);
   const [clientStats, setClientStats] = useState({
     totalClients: 0,
     newThisMonth: 0,
@@ -16,13 +20,10 @@ const Dashboard = ({ onSignOut }) => {
   });
 
   useEffect(() => {
-    // Get user data from localStorage
     const userData = localStorage.getItem('user');
     if (userData) {
       setUser(JSON.parse(userData));
     }
-    
-    // Fetch client statistics
     fetchClientStats();
   }, []);
 
@@ -40,7 +41,6 @@ const Dashboard = ({ onSignOut }) => {
         const data = await response.json();
         const clients = data.clients || [];
         
-        // Calculate stats
         const now = new Date();
         const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         
@@ -86,7 +86,7 @@ const Dashboard = ({ onSignOut }) => {
   const handleBackToClients = () => {
     setCurrentView('clients');
     setSelectedClient(null);
-    fetchClientStats(); // Refresh stats when returning to clients list
+    fetchClientStats();
   };
 
   const handleBackToProfile = () => {
@@ -95,24 +95,55 @@ const Dashboard = ({ onSignOut }) => {
 
   const handleClientUpdated = (updatedClient) => {
     setSelectedClient(updatedClient);
-    fetchClientStats(); // Refresh stats after update
+    fetchClientStats();
   };
 
-  // Items handlers
   const handleFoodsNavigation = () => {
     setCurrentView('foods');
+  };
+
+  const handleClientsNavigation = () => {
+    setCurrentView('clients');
   };
 
   const handleCreateFood = () => {
     setCurrentView('create-food');
   };
 
+  const handleViewFood = (food) => {
+    console.log('🍎 handleViewFood called with:', food);
+    setSelectedFood(food);
+    setCurrentView('view-food');
+    console.log('🍎 Current view set to:', 'view-food');
+    console.log('🍎 Selected food set to:', food);
+  };
+
+  const handleEditFood = (food) => {
+    console.log('🍎 handleEditFood called with:', food);
+    setSelectedFood(food);
+    setCurrentView('edit-food');
+  };
+
   const handleBackToFoods = () => {
     setCurrentView('foods');
+    setSelectedFood(null);
   };
+
+  const handleBackToFoodProfile = () => {
+    setCurrentView('view-food');
+  };
+
+  const handleFoodUpdated = (updatedFood) => {
+    setSelectedFood(updatedFood);
+    fetchClientStats();
+  };
+
   if (!user) {
     return <div className="loading">Loading...</div>;
   }
+
+  console.log('🍎 Dashboard render - currentView:', currentView);
+  console.log('🍎 Dashboard render - selectedFood:', selectedFood);
 
   const renderContent = () => {
     switch (currentView) {
@@ -126,7 +157,6 @@ const Dashboard = ({ onSignOut }) => {
               </button>
               <h1 className="page-title">Create New Client Account</h1>
             </div>
-            
             <div className="create-client-form">
               <ClientManagement 
                 onStatsUpdate={fetchClientStats} 
@@ -154,11 +184,13 @@ const Dashboard = ({ onSignOut }) => {
             onSave={handleClientUpdated}
           />
         );
-      
+
       case 'foods':
         return (
           <FoodManagement 
             onCreateFood={handleCreateFood}
+            onViewFood={handleViewFood}
+            onEditFood={handleEditFood}
             viewMode="list"
           />
         );
@@ -173,15 +205,37 @@ const Dashboard = ({ onSignOut }) => {
               </button>
               <h1 className="page-title">Create New Food</h1>
             </div>
-            
             <div className="create-client-form">
-              <div className="empty-state">
-                <p>Food creation form will be implemented here.</p>
-              </div>
+              <FoodManagement 
+                onStatsUpdate={fetchClientStats} 
+                viewMode="create"
+                onBack={handleBackToFoods}
+              />
             </div>
           </div>
         );
-      default: // 'clients'
+
+      case 'view-food':
+        console.log('🍎 Rendering FoodProfile with foodId:', selectedFood?.id);
+        return (
+          <FoodProfile
+            foodId={selectedFood?.id}
+            onBack={handleBackToFoods}
+            onEdit={handleEditFood}
+          />
+        );
+
+      case 'edit-food':
+        console.log('🍎 Rendering FoodEdit with food:', selectedFood);
+        return (
+          <FoodEdit
+            food={selectedFood}
+            onBack={handleBackToFoods}
+            onSave={handleFoodUpdated}
+          />
+        );
+      
+      default:
         return (
           <ClientManagement 
             onStatsUpdate={fetchClientStats} 
@@ -194,25 +248,8 @@ const Dashboard = ({ onSignOut }) => {
     }
   };
 
-  const getPageTitle = () => {
-    switch (currentView) {
-      case 'create-client':
-        return 'Create New Client';
-      case 'view-client':
-        return selectedClient ? `${selectedClient.name} - Profile` : 'Client Profile';
-      case 'edit-client':
-        return selectedClient ? `Edit ${selectedClient.name}` : 'Edit Client';
-      case 'foods':
-        return 'Food Management';
-      case 'create-food':
-        return 'Create New Food';      default:
-        return currentView.includes('food') ? 'Food Management' : 'Client Management';
-    }
-  };
-
   return (
     <div className="dashboard-container">
-      {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="logo">
@@ -222,7 +259,7 @@ const Dashboard = ({ onSignOut }) => {
         </div>
         
         <nav className="sidebar-nav">
-          <div className={`nav-item ${currentView.includes('client') ? 'active' : ''}`} onClick={() => setCurrentView('clients')}>
+          <div className={`nav-item ${currentView.includes('client') ? 'active' : ''}`} onClick={handleClientsNavigation}>
             <MdPeople className="nav-icon" />
             <span>Client Management</span>
           </div>
@@ -249,7 +286,6 @@ const Dashboard = ({ onSignOut }) => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="main-content">
         <div className="content-wrapper">
           {renderContent()}
@@ -259,4 +295,4 @@ const Dashboard = ({ onSignOut }) => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

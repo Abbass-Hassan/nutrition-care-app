@@ -37,3 +37,7 @@ Route::get('/health', function () {
         'message' => 'Nutrition Care API is running'
     ]);
 }); 
+// Food management routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('foods', App\Http\Controllers\FoodController::class);
+});
