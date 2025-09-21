@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Auth.css';
+import { API_BASE } from '../config';
 
 const SignIn = ({ onNavigate }) => {
   const [formData, setFormData] = useState({
@@ -18,7 +19,7 @@ const SignIn = ({ onNavigate }) => {
     e.preventDefault();
     
     try {
-      const response = await fetch('http://localhost:8000/api/signin', {
+      const response = await fetch(`${API_BASE}/signin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

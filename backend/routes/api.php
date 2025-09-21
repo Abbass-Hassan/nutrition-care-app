@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ChatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,9 +25,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
+    // Clients (dietitian-only) - controller already enforces access
     Route::get('/clients', [AuthController::class, 'getClients']);
     Route::get('/clients/{id}', [AuthController::class, 'getClient']);
     Route::put('/clients/{id}', [AuthController::class, 'updateClient']);
+
+    // Chats
+    Route::get('/chats', [ChatController::class, 'listChats']);
+    Route::get('/my-chat', [ChatController::class, 'myChat']); // client-only
+    Route::post('/chats/init/{clientId}', [ChatController::class, 'initWithClient']); // dietitian-only
+    Route::get('/chats/{chatId}/messages', [ChatController::class, 'getMessages']);
+    Route::post('/chats/{chatId}/messages', [ChatController::class, 'sendMessage']);
 });
 
 // Health check route

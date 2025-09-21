@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Notification from './Notification';
+import { API_BASE } from '../config';
 
 const ClientManagement = ({ onStatsUpdate, onCreateClient, onViewClient, onEditClient, viewMode = 'list', onBack }) => {
   const [clients, setClients] = useState([]);
@@ -18,7 +19,7 @@ const ClientManagement = ({ onStatsUpdate, onCreateClient, onViewClient, onEditC
   const fetchClients = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/clients', {
+      const response = await fetch(`${API_BASE}/clients`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -70,7 +71,7 @@ const ClientManagement = ({ onStatsUpdate, onCreateClient, onViewClient, onEditC
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/signup', {
+      const response = await fetch(`${API_BASE}/signup`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -106,11 +107,14 @@ const ClientManagement = ({ onStatsUpdate, onCreateClient, onViewClient, onEditC
           subscriptionType: 'paid'
         });
         
+        // Refresh list
+        await fetchClients();
+        
         // Update stats and go back after showing success
         if (onStatsUpdate) onStatsUpdate();
         setTimeout(() => {
           if (onBack) onBack();
-        }, 3000);
+        }, 1500);
       } else {
         setNotification({
           message: data.message || 'Failed to create client account',

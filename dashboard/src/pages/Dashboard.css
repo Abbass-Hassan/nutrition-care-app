@@ -1817,7 +1817,7 @@
 .chat-layout {
   display: grid;
   grid-template-columns: 320px 1fr;
-  min-height: 70vh;
+  min-height: 85vh;
 }
 
 .chat-sidebar {
@@ -1840,7 +1840,7 @@
 }
 
 .chat-client-list {
-  max-height: calc(70vh - 60px);
+  max-height: calc(85vh - 60px);
   overflow-y: auto;
 }
 

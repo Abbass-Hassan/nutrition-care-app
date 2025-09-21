@@ -1,44 +1,144 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, InteractionManager } from 'react-native';
 import { colors } from '../../theme';
+import { API_BASE, SOCKET_URL } from '../../config';
+import { io } from 'socket.io-client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ChatTab = () => {
-  const [messages, setMessages] = useState([
-    { id: '1', from: 'dietitian', text: 'Hello! How are you feeling today?' },
-    { id: '2', from: 'client', text: "I'm doing well, thanks!" },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
+  const [chat, setChat] = useState(null);
+  const [dietitian, setDietitian] = useState(null);
+  const socketRef = useRef(null);
+  const listRef = useRef(null);
 
-  const handleSend = () => {
+  const scrollToBottom = (animated = true) => {
+    const ref = listRef.current;
+    if (!ref) return;
+    InteractionManager.runAfterInteractions(() => {
+      try {
+        if (typeof ref.scrollToEnd === 'function') {
+          ref.scrollToEnd({ animated });
+        } else if (typeof ref.scrollToOffset === 'function') {
+          ref.scrollToOffset({ offset: 100000, animated });
+        } else if (messages.length > 0 && typeof ref.scrollToIndex === 'function') {
+          ref.scrollToIndex({ index: messages.length - 1, animated });
+        }
+      } catch (e) {
+        // Retry shortly if layout not ready
+        setTimeout(() => {
+          try { ref.scrollToEnd?.({ animated }); } catch {}
+        }, 50);
+      }
+    });
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+
+      // Get or create my chat
+      const chatRes = await fetch(`${API_BASE}/my-chat`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const chatData = await chatRes.json();
+      if (chatRes.ok && chatData.success) {
+        setChat(chatData.chat);
+        // Use dietitian details from API if present
+        if (chatData.chat?.dietitian) {
+          setDietitian({ id: chatData.chat.dietitian.id, name: chatData.chat.dietitian.name, username: chatData.chat.dietitian.username || 'dietitian' });
+        }
+      }
+
+      // Fetch messages
+      if (chatData?.chat?.id) {
+        const msgRes = await fetch(`${API_BASE}/chats/${chatData.chat.id}/messages`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const msgData = await msgRes.json();
+        if (msgRes.ok && msgData.success) {
+          setMessages(msgData.messages || []);
+          setTimeout(() => scrollToBottom(false), 80);
+        }
+      }
+
+      // Fallback dietitian from stored user if API didn’t include
+      if (!dietitian) {
+        const userStr = await AsyncStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : null;
+        if (user?.dietitian_id) {
+          setDietitian({ id: user.dietitian_id, name: 'Your Dietitian', username: 'dietitian' });
+        }
+      }
+
+      // Connect socket and join
+      if (!socketRef.current) {
+        socketRef.current = io(SOCKET_URL, { auth: { token } });
+        socketRef.current.on('new-message', (message) => {
+          if (message.chat_id === chatData.chat.id) {
+            setMessages(prev => [...prev, message]);
+            setTimeout(() => scrollToBottom(true), 10);
+          }
+        });
+      }
+      if (chatData?.chat?.id) {
+        socketRef.current.emit('join-chat', chatData.chat.id);
+      }
+    };
+    init();
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => scrollToBottom(true), 10);
+    }
+  }, [messages]);
+
+  const handleSend = async () => {
     const text = draft.trim();
-    if (!text) return;
-    setMessages(prev => [...prev, { id: String(Date.now()), from: 'client', text }]);
+    if (!text || !chat) return;
+    socketRef.current?.emit('send-message', { chatId: chat.id, text });
     setDraft('');
+    setTimeout(() => scrollToBottom(true), 10);
   };
 
   const renderItem = ({ item }) => (
-    <View style={[styles.message, item.from === 'client' ? styles.outgoing : styles.incoming]}>
-      <View style={[styles.bubble, item.from === 'client' ? styles.bubbleOutgoing : styles.bubbleIncoming]}>
-        <Text style={item.from === 'client' ? styles.textOutgoing : styles.textIncoming}>{item.text}</Text>
+    <View style={[styles.message, item.sender_id === dietitian?.id ? styles.incoming : styles.outgoing]}>
+      <View style={[styles.bubble, item.sender_id === dietitian?.id ? styles.bubbleIncoming : styles.bubbleOutgoing]}>
+        <Text style={item.sender_id === dietitian?.id ? styles.textIncoming : styles.textOutgoing}>{item.text}</Text>
       </View>
     </View>
   );
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}>
       <View style={styles.header}>
         <View style={styles.avatar}><Text style={styles.avatarText}>DT</Text></View>
         <View>
-          <Text style={styles.name}>Your Dietitian</Text>
-          <Text style={styles.username}>@dietitian</Text>
+          <Text style={styles.name}>{dietitian?.name || 'Your Dietitian'}</Text>
+          <Text style={styles.username}>@{dietitian?.username || 'dietitian'}</Text>
         </View>
       </View>
 
       <FlatList
+        ref={listRef}
         data={messages}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
-        contentContainerStyle={styles.messages}
+        contentContainerStyle={[styles.messages, { paddingBottom: 24 }]}
+        style={{ flex: 1 }}
+        onContentSizeChange={() => scrollToBottom(false)}
+        onLayout={() => scrollToBottom(false)}
+        keyboardShouldPersistTaps="handled"
       />
 
       <View style={styles.composer}>
@@ -48,6 +148,8 @@ const ChatTab = () => {
           placeholderTextColor={colors.textLight}
           value={draft}
           onChangeText={setDraft}
+          onSubmitEditing={handleSend}
+          returnKeyType="send"
         />
         <TouchableOpacity style={styles.sendButton} onPress={handleSend} disabled={!draft.trim()}>
           <Text style={styles.sendText}>Send</Text>

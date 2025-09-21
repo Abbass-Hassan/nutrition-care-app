@@ -11,6 +11,8 @@ import {
   Alert,
 } from 'react-native';
 import { colors } from '../theme';
+import { API_BASE } from '../config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SignInScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
@@ -37,7 +39,7 @@ const SignInScreen = ({ navigation }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/signin', {
+      const response = await fetch(`${API_BASE}/signin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,9 +54,8 @@ const SignInScreen = ({ navigation }) => {
       const data = await response.json();
 
       if (data.success) {
-        console.log('Client signed in successfully:', data);
-        // Store token and navigate to main screen
-        // You can store the token here if needed
+        await AsyncStorage.setItem('token', data.token);
+        await AsyncStorage.setItem('user', JSON.stringify(data.user));
         navigation.navigate('Main');
       } else {
         Alert.alert('Error', data.message || 'Sign in failed. Please check your credentials.');

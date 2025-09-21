@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -22,6 +24,7 @@ class User extends Authenticatable
         'username',
         'password',
         'user_type',
+        'dietitian_id',
     ];
 
     /**
@@ -58,5 +61,25 @@ class User extends Authenticatable
     public function isClient()
     {
         return $this->user_type === 'client';
+    }
+
+    public function dietitian(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dietitian_id');
+    }
+
+    public function clients(): HasMany
+    {
+        return $this->hasMany(User::class, 'dietitian_id');
+    }
+
+    public function dietitianChats(): HasMany
+    {
+        return $this->hasMany(Chat::class, 'dietitian_id');
+    }
+
+    public function clientChats(): HasMany
+    {
+        return $this->hasMany(Chat::class, 'client_id');
     }
 }

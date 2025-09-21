@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -74,6 +75,7 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'username' => $user->username,
                     'user_type' => $user->user_type,
+                    'dietitian_id' => $user->dietitian_id,
                     'created_at' => $user->created_at
                 ],
                 'token' => $token
@@ -130,6 +132,18 @@ class AuthController extends Controller
             if ($request->email) {
                 $userData['email'] = $request->email;
             }
+
+            // Link to creating dietitian if request contains a valid bearer token for a dietitian
+            $bearer = $request->bearerToken();
+            if (!empty($bearer)) {
+                $personalToken = PersonalAccessToken::findToken($bearer);
+                if ($personalToken) {
+                    $creator = $personalToken->tokenable;
+                    if ($creator && $creator->isDietitian()) {
+                        $userData['dietitian_id'] = $creator->id;
+                    }
+                }
+            }
         } else {
             $userData = [
                 'name' => $request->name,
@@ -152,6 +166,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'username' => $user->username,
                 'user_type' => $user->user_type,
+                'dietitian_id' => $user->dietitian_id,
                 'created_at' => $user->created_at
             ],
             'token' => $token
@@ -185,7 +200,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Get clients for dietitians
+     * Get clients for dietitians (only assigned clients)
      */
     public function getClients(Request $request)
     {
@@ -200,6 +215,7 @@ class AuthController extends Controller
         }
 
         $clients = User::where('user_type', 'client')
+                      ->where('dietitian_id', $user->id)
                       ->orderBy('created_at', 'desc')
                       ->get(['id', 'name', 'username', 'email', 'created_at']);
 
@@ -210,10 +226,18 @@ class AuthController extends Controller
     }
 
     // Get single client by ID
-    public function getClient($id)
+    public function getClient(Request $request, $id)
     {
+        $user = $request->user();
         try {
             $client = User::where('user_type', 'client')->findOrFail($id);
+
+            if (!$user->isDietitian() || $client->dietitian_id !== $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied.'
+                ], 403);
+            }
             
             return response()->json([
                 'success' => true,
@@ -230,8 +254,16 @@ class AuthController extends Controller
     // Update client information
     public function updateClient(Request $request, $id)
     {
+        $user = $request->user();
         try {
             $client = User::where('user_type', 'client')->findOrFail($id);
+
+            if (!$user->isDietitian() || $client->dietitian_id !== $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied.'
+                ], 403);
+            }
             
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
