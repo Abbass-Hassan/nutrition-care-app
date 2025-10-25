@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { MdPeople, MdDashboard, MdLogout, MdArrowBack, MdInventory, MdChat } from 'react-icons/md';
+import { MdPeople, MdDashboard, MdLogout, MdArrowBack, MdInventory, MdChat, MdCheckCircle, MdMenu, MdMenuOpen, MdTrendingUp, MdRestaurant } from 'react-icons/md';
 import ClientManagement from '../components/ClientManagement';
 import ClientProfile from '../components/ClientProfile';
 import ClientEdit from '../components/ClientEdit';
+import ClientProgress from '../components/ClientProgress';
 import FoodManagement from '../components/FoodManagement';
 import FoodProfile from '../components/FoodProfile';
 import FoodEdit from '../components/FoodEdit';
+import FoodApprovals from '../components/FoodApprovals';
 import Chat from '../components/Chat';
 import './Dashboard.css';
 
@@ -19,6 +21,8 @@ const Dashboard = ({ onSignOut }) => {
     newThisMonth: 0,
     paidSubscriptions: 0
   });
+  const [pendingFoodsCount, setPendingFoodsCount] = useState(0);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -26,6 +30,11 @@ const Dashboard = ({ onSignOut }) => {
       setUser(JSON.parse(userData));
     }
     fetchClientStats();
+    fetchPendingFoodsCount();
+    
+    // Poll for pending foods every 30 seconds
+    const interval = setInterval(fetchPendingFoodsCount, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchClientStats = async () => {
@@ -64,6 +73,27 @@ const Dashboard = ({ onSignOut }) => {
     }
   };
 
+  const fetchPendingFoodsCount = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:8000/api'}/pending-foods`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setPendingFoodsCount(data.pending_foods?.length || 0);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching pending foods count:', error);
+    }
+  };
+
   const handleSignOut = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -72,6 +102,7 @@ const Dashboard = ({ onSignOut }) => {
 
   const handleCreateClient = () => {
     setCurrentView('create-client');
+    setSidebarCollapsed(true); // Auto-collapse sidebar for form
   };
 
   const handleViewClient = (client) => {
@@ -82,16 +113,30 @@ const Dashboard = ({ onSignOut }) => {
   const handleEditClient = (client) => {
     setSelectedClient(client);
     setCurrentView('edit-client');
+    setSidebarCollapsed(true); // Auto-collapse sidebar for edit form
+  };
+
+  const handleViewProgress = (client) => {
+    setSelectedClient(client);
+    setCurrentView('client-progress');
+    setSidebarCollapsed(false); // Keep sidebar visible for progress page
+  };
+
+  const handleProgressNavigation = () => {
+    setCurrentView('progress-list');
+    setSelectedClient(null);
   };
 
   const handleBackToClients = () => {
     setCurrentView('clients');
     setSelectedClient(null);
+    setSidebarCollapsed(false); // Expand sidebar when going back
     fetchClientStats();
   };
 
   const handleBackToProfile = () => {
     setCurrentView('view-client');
+    setSidebarCollapsed(false); // Expand sidebar when going back to profile
   };
 
   const handleClientUpdated = (updatedClient) => {
@@ -177,7 +222,6 @@ const Dashboard = ({ onSignOut }) => {
           <ClientProfile
             clientId={selectedClient.id}
             onBack={handleBackToClients}
-            onEdit={handleEditClient}
           />
         );
       
@@ -202,22 +246,11 @@ const Dashboard = ({ onSignOut }) => {
 
       case 'create-food':
         return (
-          <div className="create-client-page">
-            <div className="page-header">
-              <button className="back-button" onClick={handleBackToFoods}>
-                <MdArrowBack className="back-icon" />
-                Back to Foods
-              </button>
-              <h1 className="page-title">Create New Food</h1>
-            </div>
-            <div className="create-client-form">
-              <FoodManagement 
-                onStatsUpdate={fetchClientStats} 
-                viewMode="create"
-                onBack={handleBackToFoods}
-              />
-            </div>
-          </div>
+          <FoodManagement 
+            onStatsUpdate={fetchClientStats} 
+            viewMode="create"
+            onBack={handleBackToFoods}
+          />
         );
 
       case 'view-food':
@@ -245,6 +278,31 @@ const Dashboard = ({ onSignOut }) => {
           <Chat />
         );
       
+      case 'food-approvals':
+        return (
+          <FoodApprovals />
+        );
+      
+      case 'client-progress':
+        return (
+          <ClientProgress 
+            clientId={selectedClient?.id}
+            clientName={selectedClient?.name}
+            onBack={() => setCurrentView('progress-list')}
+          />
+        );
+      
+      case 'progress-list':
+        return (
+          <ClientManagement 
+            onStatsUpdate={fetchClientStats} 
+            onCreateClient={handleCreateClient}
+            onViewClient={handleViewProgress}
+            onEditClient={handleEditClient}
+            viewMode="progress"
+          />
+        );
+      
       default:
         return (
           <ClientManagement 
@@ -260,47 +318,70 @@ const Dashboard = ({ onSignOut }) => {
 
   return (
     <div className="dashboard-container">
-      <aside className="sidebar">
+      <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
           <div className="logo">
-            <span className="logo-icon">🍎</span>
-            <span className="logo-text">NutritionCare</span>
+            <MdRestaurant className="logo-icon" />
+            {!sidebarCollapsed && <span className="logo-text">NutritionCare</span>}
           </div>
+          <button className="sidebar-toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
+            {sidebarCollapsed ? <MdMenu /> : <MdMenuOpen />}
+          </button>
         </div>
         
         <nav className="sidebar-nav">
-          <div className={`nav-item ${currentView.includes('client') ? 'active' : ''}`} onClick={handleClientsNavigation}>
+          <div className={`nav-item ${currentView.includes('client') && !currentView.includes('progress') ? 'active' : ''}`} onClick={handleClientsNavigation} title="Client Management">
             <MdPeople className="nav-icon" />
-            <span>Client Management</span>
+            {!sidebarCollapsed && <span>Client Management</span>}
           </div>
-          <div className={`nav-item ${currentView.includes('food') ? 'active' : ''}`} onClick={handleFoodsNavigation}>
+          <div className={`nav-item ${currentView.includes('progress') ? 'active' : ''}`} onClick={handleProgressNavigation} title="Client Progress">
+            <MdTrendingUp className="nav-icon" />
+            {!sidebarCollapsed && <span>Client Progress</span>}
+          </div>
+          <div className={`nav-item ${currentView.includes('food') && !currentView.includes('approval') ? 'active' : ''}`} onClick={handleFoodsNavigation} title="Food Management">
             <MdInventory className="nav-icon" />
-            <span>Food Management</span>
+            {!sidebarCollapsed && <span>Food Management</span>}
           </div>
-          <div className={`nav-item ${currentView === 'chat' ? 'active' : ''}`} onClick={handleChatNavigation}>
+          <div className={`nav-item ${currentView === 'food-approvals' ? 'active' : ''}`} onClick={() => { setCurrentView('food-approvals'); fetchPendingFoodsCount(); }} title="Food Approvals">
+            <MdCheckCircle className="nav-icon" />
+            {!sidebarCollapsed && <span>Food Approvals</span>}
+            {pendingFoodsCount > 0 && (
+              <span className="notification-badge">{pendingFoodsCount}</span>
+            )}
+          </div>
+          <div className={`nav-item ${currentView === 'chat' ? 'active' : ''}`} onClick={handleChatNavigation} title="Chat">
             <MdChat className="nav-icon" />
-            <span>Chat</span>
+            {!sidebarCollapsed && <span>Chat</span>}
           </div>
         </nav>
         
         <div className="sidebar-footer">
-          <div className="user-info">
-            <div className="user-avatar">
-              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+          {!sidebarCollapsed && (
+            <div className="user-info">
+              <div className="user-avatar">
+                {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              </div>
+              <div className="user-details">
+                <div className="user-name">{user.name}</div>
+                <div className="user-role">Dietitian</div>
+              </div>
             </div>
-            <div className="user-details">
-              <div className="user-name">{user.name}</div>
-              <div className="user-role">Dietitian</div>
+          )}
+          {sidebarCollapsed && (
+            <div className="user-info collapsed">
+              <div className="user-avatar">
+                {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              </div>
             </div>
-          </div>
-          <button className="sign-out-btn" onClick={handleSignOut}>
+          )}
+          <button className="sign-out-btn" onClick={handleSignOut} title="Sign Out">
             <MdLogout className="logout-icon" />
-            <span>Sign Out</span>
+            {!sidebarCollapsed && <span>Sign Out</span>}
           </button>
         </div>
       </aside>
 
-      <main className="main-content">
+      <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="content-wrapper">
           {renderContent()}
         </div>

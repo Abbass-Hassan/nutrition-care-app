@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { MdArrowBack, MdSave, MdCancel } from 'react-icons/md';
-import Notification from './Notification';
+import { MdArrowBack, MdSave, MdCancel, MdRestaurant } from 'react-icons/md';
+import ErrorMessage from './ErrorMessage';
 
 const FoodEdit = ({ food, onBack, onSave }) => {
   const [formData, setFormData] = useState({
@@ -16,7 +16,7 @@ const FoodEdit = ({ food, onBack, onSave }) => {
     photoPreview: food.photo_url || null
   });
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const categories = [
     'Meat', 'Fruit', 'Vegetables', 'Dairy', 'Grains', 
@@ -33,10 +33,16 @@ const FoodEdit = ({ food, onBack, onSave }) => {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Clean up previous preview URL to prevent memory leaks
+      if (formData.photoPreview && formData.photoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(formData.photoPreview);
+      }
+      
+      const previewUrl = URL.createObjectURL(file);
       setFormData(prev => ({
         ...prev,
         photo: file,
-        photoPreview: URL.createObjectURL(file)
+        photoPreview: previewUrl
       }));
     }
   };
@@ -44,21 +50,18 @@ const FoodEdit = ({ food, onBack, onSave }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage(null);
 
     try {
       const token = localStorage.getItem('token');
       const formDataToSend = new FormData();
       
       formDataToSend.append('name', formData.name);
-      formDataToSend.append('_method', 'PUT');      formDataToSend.append('category', formData.category);
+      formDataToSend.append('_method', 'PUT');
+      formDataToSend.append('category', formData.category);
       formDataToSend.append('default_serving', formData.default_serving);
       formDataToSend.append('calories', formData.calories);
-      console.log('Sending data:', {
-        calories: formData.calories,
-        carbs: formData.carbs,
-        protein: formData.protein,
-        fat: formData.fat
-      });      formDataToSend.append('carbs', formData.carbs || '');
+      formDataToSend.append('carbs', formData.carbs || '');
       formDataToSend.append('protein', formData.protein || '');
       formDataToSend.append('fat', formData.fat || '');
       formDataToSend.append('notes', formData.notes || '');
@@ -78,7 +81,7 @@ const FoodEdit = ({ food, onBack, onSave }) => {
       const data = await response.json();
 
       if (response.ok) {
-        setNotification({
+        setErrorMessage({
           message: 'Food information updated successfully!',
           type: 'success'
         });
@@ -105,14 +108,14 @@ const FoodEdit = ({ food, onBack, onSave }) => {
           onBack();
         }, 2000);
       } else {
-        setNotification({
+        setErrorMessage({
           message: data.message || 'Failed to update food information',
           type: 'error'
         });
       }
     } catch (error) {
       console.error('Error updating food:', error);
-      setNotification({
+      setErrorMessage({
         message: 'Failed to update food information. Please try again.',
         type: 'error'
       });
@@ -129,6 +132,7 @@ const FoodEdit = ({ food, onBack, onSave }) => {
       formData.calories !== food.calories ||
       formData.carbs !== (food.carbs || '') ||
       formData.protein !== (food.protein || '') ||
+      formData.fat !== (food.fat || '') ||
       formData.notes !== (food.notes || '') ||
       formData.photo !== null
     );
@@ -136,48 +140,36 @@ const FoodEdit = ({ food, onBack, onSave }) => {
 
   return (
     <>
-      {notification && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          autoClose={notification.type === 'error'}
-          onClose={() => setNotification(null)}
+      {errorMessage && (
+        <ErrorMessage
+          message={errorMessage.message}
+          type={errorMessage.type}
+          autoClose={errorMessage.type === 'error'}
+          onClose={() => setErrorMessage(null)}
         />
       )}
       
-      <div className="create-client-page">
-        <div className="page-header">
-          <button className="back-button" onClick={onBack}>
-            <MdArrowBack className="back-icon" />
-            Back to Foods
+      <div className="food-create-container">
+        <div className="food-create-header">
+          <button 
+            className="back-btn"
+            onClick={onBack}
+            disabled={loading}
+          >
+            ← Back to Foods
           </button>
-          <h1 className="page-title">Edit Food Information</h1>
+          <h1>Edit Food Information</h1>
+          <p>Update the food item details in your nutrition database</p>
         </div>
 
-        <div className="create-client-full-page">
-          <div className="client-summary">
-            <div className="client-avatar">
-              {food.photo_url ? (
-                <img 
-                  src={food.photo_url} 
-                  alt={food.name}
-                  className="food-avatar-image"
-                />
-              ) : (
-                <span>🍎</span>
-              )}
-            </div>
-            <div className="client-details">
-              <h3>{food.name}</h3>
-              <p>{food.category}</p>
-              <small>Food ID: {food.id}</small>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="client-form-page">
-            <div className="form-section">
-              <h3>Food Information</h3>
-              <div className="form-row">
+        <form onSubmit={handleSubmit} className="food-create-form">
+          <div className="form-grid">
+            {/* Basic Information */}
+            <div className="form-card">
+              <div className="form-card-header">
+                <h3>Basic Information</h3>
+              </div>
+              <div className="form-card-content">
                 <div className="form-group">
                   <label htmlFor="name">Food Name *</label>
                   <input
@@ -188,6 +180,7 @@ const FoodEdit = ({ food, onBack, onSave }) => {
                     onChange={handleInputChange}
                     placeholder="Enter food name"
                     required
+                    disabled={loading}
                   />
                 </div>
 
@@ -199,14 +192,14 @@ const FoodEdit = ({ food, onBack, onSave }) => {
                     value={formData.category}
                     onChange={handleInputChange}
                     required
+                    disabled={loading}
                   >
                     {categories.map(category => (
                       <option key={category} value={category}>{category}</option>
                     ))}
                   </select>
                 </div>
-              </div>
-              <div className="form-row">
+
                 <div className="form-group">
                   <label htmlFor="default_serving">Default Serving *</label>
                   <input
@@ -217,126 +210,153 @@ const FoodEdit = ({ food, onBack, onSave }) => {
                     onChange={handleInputChange}
                     placeholder="e.g., 1 medium (150g)"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
             </div>
 
-            <div className="form-section">
-              <h3>Nutritional Information</h3>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="calories">Calories *</label>
-                  <input
-                    type="number"
-                    id="calories"
-                    name="calories"
-                    value={formData.calories}
-                    onChange={handleInputChange}
-                    min="0"
-                    step="0.1"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="carbs">Carbs (g)</label>
-                  <input
-                    type="number"
-                    id="carbs"
-                    name="carbs"
-                    value={formData.carbs}
-                    onChange={handleInputChange}
-                    min="0"
-                    step="0.1"
-                  />
-                </div>
+            {/* Nutritional Information */}
+            <div className="form-card">
+              <div className="form-card-header">
+                <h3>Nutritional Information</h3>
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="protein">Protein (g)</label>
-                  <input
-                    type="number"
-                    id="protein"
-                    name="protein"
-                    value={formData.protein}
-                    onChange={handleInputChange}
-                    min="0"
-                    step="0.1"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="fat">Fat (g)</label>
-                  <input
-                    type="number"
-                    id="fat"
-                    name="fat"
-                    value={formData.fat}
-                    onChange={handleInputChange}
-                    min="0"
-                    step="0.1"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="form-section">
-              <h3>Photo</h3>
-              <div className="form-group">
-                <label htmlFor="photo">Food Photo</label>
-                <input
-                  type="file"
-                  id="photo"
-                  name="photo"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                />
-                {formData.photoPreview && (
-                  <div className="photo-preview-container">
-                    <img 
-                      src={formData.photoPreview} 
-                      alt="Food preview" 
-                      className="photo-preview"
+              <div className="form-card-content">
+                <div className="nutrition-grid">
+                  <div className="form-group">
+                    <label htmlFor="calories">Calories *</label>
+                    <input
+                      type="number"
+                      id="calories"
+                      name="calories"
+                      value={formData.calories}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.1"
+                      required
+                      disabled={loading}
                     />
-                    <span className="photo-preview-label">Preview</span>
                   </div>
-                )}
+                  <div className="form-group">
+                    <label htmlFor="carbs">Carbs (g)</label>
+                    <input
+                      type="number"
+                      id="carbs"
+                      name="carbs"
+                      value={formData.carbs}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.1"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="protein">Protein (g)</label>
+                    <input
+                      type="number"
+                      id="protein"
+                      name="protein"
+                      value={formData.protein}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.1"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="fat">Fat (g)</label>
+                    <input
+                      type="number"
+                      id="fat"
+                      name="fat"
+                      value={formData.fat}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.1"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="form-section">
-              <h3>Notes</h3>
-              <div className="form-group">
-                <label htmlFor="notes">Additional Notes</label>
-                <textarea
-                  id="notes"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  rows="4"
-                  placeholder="Any additional information about this food..."
-                />
+            {/* Photo */}
+            <div className="form-card">
+              <div className="form-card-header">
+                <h3>Photo</h3>
+              </div>
+              <div className="form-card-content">
+                <div className="photo-upload-section">
+                  <div className="photo-upload-area">
+                    <input
+                      type="file"
+                      id="photo"
+                      name="photo"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      disabled={loading}
+                      className="photo-input"
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="photo" className="photo-upload-label">
+                      {formData.photoPreview && formData.photoPreview.startsWith('blob:') ? (
+                        <img 
+                          src={formData.photoPreview} 
+                          alt="Food preview" 
+                          className="photo-preview"
+                        />
+                      ) : (
+                        <div className="photo-placeholder">
+                          <MdRestaurant size={32} />
+                          <span>Click to upload photo</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="form-actions-page">
-              <button 
-                type="button" 
-                className="btn-secondary"
-                onClick={onBack}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                className="btn-primary"
-                disabled={loading || !hasChanges()}
-              >
-                {loading ? 'Saving...' : 'Save Changes'}
-              </button>
+            {/* Additional Notes */}
+            <div className="form-card">
+              <div className="form-card-header">
+                <h3>Additional Notes</h3>
+              </div>
+              <div className="form-card-content">
+                <div className="form-group">
+                  <label htmlFor="notes">Notes</label>
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    rows="4"
+                    placeholder="Any additional information about this food..."
+                    disabled={loading}
+                  />
+                </div>
+              </div>
             </div>
-          </form>
-        </div>
+          </div>
+
+          <div className="form-actions">
+            <button 
+              type="button" 
+              className="btn-secondary"
+              onClick={onBack}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="btn-primary"
+              disabled={loading || !hasChanges()}
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
       </div>
     </>
   );

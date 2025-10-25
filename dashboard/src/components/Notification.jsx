@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MdCheckCircle, MdError, MdWarning, MdInfo } from 'react-icons/md';
+import { MdCheckCircle, MdError, MdWarning, MdInfo, MdClose } from 'react-icons/md';
 
 const Notification = ({ message, type = 'success', onClose, autoClose = true }) => {
   useEffect(() => {
@@ -36,7 +36,7 @@ const Notification = ({ message, type = 'success', onClose, autoClose = true }) 
           ))}
         </div>
         <button className="notification-close" onClick={onClose}>
-          ×
+          <MdClose />
         </button>
       </div>
     </div>

@@ -81,7 +81,7 @@ const FoodProfile = ({ foodId, onBack, onEdit }) => {
                 className="food-avatar-image"
               />
             ) : (
-              <span>🍎</span>
+              <MdRestaurant size={60} />
             )}
           </div>
           <div className="client-info">

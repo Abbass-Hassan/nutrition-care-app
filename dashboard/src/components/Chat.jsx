@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import Notification from './Notification';
+import ErrorMessage from './ErrorMessage';
 import { API_BASE, SOCKET_URL } from '../config';
 import { io } from 'socket.io-client';
 
@@ -11,7 +11,7 @@ const Chat = ({ onBack }) => {
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   const socketRef = useRef(null);
   const messagesRef = useRef(null);
   const currentChatIdRef = useRef(null);
@@ -39,10 +39,16 @@ const Chat = ({ onBack }) => {
         if (res.ok) {
           setClients(data.clients || []);
         } else {
-          setNotification({ message: data.message || 'Failed to load clients', type: 'error' });
+          setErrorMessage({
+            message: data.message || 'Failed to load clients. Please try again.',
+            type: 'error'
+          });
         }
       } catch (e) {
-        setNotification({ message: 'Failed to load clients. Please try again.', type: 'error' });
+        setErrorMessage({
+          message: 'Unable to connect to the server. Please check your internet connection and try again.',
+          type: 'error'
+        });
       } finally {
         setLoading(false);
       }
@@ -92,7 +98,10 @@ const Chat = ({ onBack }) => {
       });
       const initData = await initRes.json();
       if (!initRes.ok || !initData.success) {
-        setNotification({ message: initData.message || 'Failed to open chat', type: 'error' });
+        setErrorMessage({
+          message: initData.message || 'Failed to open chat. Please try again.',
+          type: 'error'
+        });
         return;
       }
       setChat(initData.chat);
@@ -131,19 +140,23 @@ const Chat = ({ onBack }) => {
       // Optional: optimistic append (will be duplicated briefly if server echoes fast)
       // setMessages(prev => [...prev, { id: `tmp-${Date.now()}`, sender_id: -1, text }]);
     } catch (err) {
-      setNotification({ message: 'Failed to send message. Please try again.', type: 'error' });
+      setErrorMessage({
+        message: 'Failed to send message. Please try again.',
+        type: 'error'
+      });
     }
   };
 
   return (
     <>
-      {notification && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification(null)}
-        />
-      )}
+      <ErrorMessage 
+        message={errorMessage?.message} 
+        type={errorMessage?.type} 
+        show={!!errorMessage}
+        onClose={() => setErrorMessage(null)}
+        autoClose={true}
+        duration={6000}
+      />
 
       <div className="client-management">
         <div className="chat-layout">

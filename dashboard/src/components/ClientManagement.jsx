@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import Notification from './Notification';
+import { MdCheckCircle, MdWarning } from 'react-icons/md';
+import ErrorMessage from './ErrorMessage';
+import ClientCreationForm from './ClientCreationForm';
 import { API_BASE } from '../config';
 
 const ClientManagement = ({ onStatsUpdate, onCreateClient, onViewClient, onEditClient, viewMode = 'list', onBack }) => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    subscriptionType: 'paid'
-  });
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState(null);
+  const [showClientForm, setShowClientForm] = useState(false);
+  const [clientProgress, setClientProgress] = useState({});
 
   // Fetch existing clients
   const fetchClients = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE}/clients`, {
         headers: {
@@ -29,102 +28,17 @@ const ClientManagement = ({ onStatsUpdate, onCreateClient, onViewClient, onEditC
       if (response.ok) {
         const data = await response.json();
         setClients(data.clients || []);
-      }
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (viewMode === 'list') {
-      fetchClients();
-    }
-  }, [viewMode]);
-
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleCreateClient = async (e) => {
-    e.preventDefault();
-    
-    if (formData.password !== formData.confirmPassword) {
-      setNotification({
-        message: 'Passwords do not match',
-        type: 'error'
-      });
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      setNotification({
-        message: 'Password must be at least 8 characters long',
-        type: 'error'
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/signup`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          username: formData.username,
-          email: formData.email || null,
-          password: formData.password,
-          password_confirmation: formData.confirmPassword,
-          user_type: 'client',
-          subscription_type: formData.subscriptionType
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setNotification({
-          message: `Client "${formData.name}" created successfully!\n\nProvide these credentials to your client:\nUsername: ${formData.username}\nPassword: ${formData.password}`,
-          type: 'success',
-          autoClose: false
-        });
-        
-        // Reset form
-        setFormData({
-          name: '',
-          username: '',
-          email: '',
-          password: '',
-          confirmPassword: '',
-          subscriptionType: 'paid'
-        });
-        
-        // Refresh list
-        await fetchClients();
-        
-        // Update stats and go back after showing success
-        if (onStatsUpdate) onStatsUpdate();
-        setTimeout(() => {
-          if (onBack) onBack();
-        }, 1500);
       } else {
-        setNotification({
-          message: data.message || 'Failed to create client account',
+        const errorData = await response.json();
+        setErrorMessage({
+          message: errorData.message || 'Failed to load clients. Please try again.',
           type: 'error'
         });
       }
     } catch (error) {
-      console.error('Error creating client:', error);
-      setNotification({
-        message: 'Failed to create client account. Please try again.',
+      console.error('Error fetching clients:', error);
+      setErrorMessage({
+        message: 'Unable to connect to the server. Please check your internet connection and try again.',
         type: 'error'
       });
     } finally {
@@ -132,167 +46,135 @@ const ClientManagement = ({ onStatsUpdate, onCreateClient, onViewClient, onEditC
     }
   };
 
-  const generateUsername = () => {
-    const name = formData.name.toLowerCase().replace(/\s+/g, '');
-    const randomNum = Math.floor(Math.random() * 1000);
-    const suggestedUsername = `${name}${randomNum}`;
-    setFormData({ ...formData, username: suggestedUsername });
+  // Fetch progress data for all clients
+  const fetchClientProgress = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/progress/clients`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const progressMap = {};
+        data.clients.forEach(client => {
+          progressMap[client.id] = client;
+        });
+        setClientProgress(progressMap);
+      }
+    } catch (error) {
+      console.error('Error fetching progress:', error);
+    }
   };
 
-  const generatePassword = () => {
-    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-    let password = '';
-    for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
+  useEffect(() => {
+    if (viewMode === 'list' || viewMode === 'progress') {
+      fetchClients();
+      if (viewMode === 'progress') {
+        fetchClientProgress();
+      }
     }
-    setFormData({ ...formData, password, confirmPassword: password });
+  }, [viewMode]);
+
+  const handleClientCreated = async (client) => {
+    setErrorMessage({
+      message: `Client "${client.name}" created successfully with comprehensive profile!`,
+      type: 'success'
+    });
+    
+    // Refresh list
+    await fetchClients();
+    
+    // Update stats
+    if (onStatsUpdate) onStatsUpdate();
+    
+    // Close form
+    setShowClientForm(false);
+    
+    // Go back after showing success
+    setTimeout(() => {
+      if (onBack) onBack();
+    }, 2000);
+  };
+
+  const handleDeleteClient = async (client) => {
+    setClientToDelete(client);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!clientToDelete) return;
+    
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/clients/${clientToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        setErrorMessage({
+          message: `Client "${clientToDelete.name}" deleted successfully!`,
+          type: 'success'
+        });
+        
+        // Refresh list
+        await fetchClients();
+        
+        // Update stats
+        if (onStatsUpdate) onStatsUpdate();
+      } else {
+        const errorData = await response.json();
+        setErrorMessage({
+          message: errorData.message || 'Failed to delete client. Please try again.',
+          type: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      setErrorMessage({
+        message: 'Unable to connect to the server. Please check your internet connection and try again.',
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+      setShowDeleteConfirm(false);
+      setClientToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setClientToDelete(null);
   };
 
   // Render create client form
   if (viewMode === 'create') {
     return (
       <>
-        {notification && (
-          <Notification
-            message={notification.message}
-            type={notification.type}
-            autoClose={notification.autoClose !== false}
-            onClose={() => setNotification(null)}
-          />
-        )}
+        <ErrorMessage 
+          message={errorMessage?.message} 
+          type={errorMessage?.type} 
+          show={!!errorMessage}
+          onClose={() => setErrorMessage(null)}
+          autoClose={true}
+          duration={6000}
+        />
         
-        <div className="create-client-full-page">
-          <form onSubmit={handleCreateClient} className="client-form-page">
-            <div className="form-section">
-              <h3>Client Information</h3>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="name">Client Full Name *</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Enter client's full name"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="subscriptionType">Subscription Type *</label>
-                  <select
-                    id="subscriptionType"
-                    name="subscriptionType"
-                    value={formData.subscriptionType}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="paid">Paid (Default)</option>
-                    <option value="free">Free (Special Case)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="username">Username *</label>
-                  <div className="input-with-button">
-                    <input
-                      type="text"
-                      id="username"
-                      name="username"
-                      value={formData.username}
-                      onChange={handleInputChange}
-                      placeholder="Choose a unique username"
-                      required
-                    />
-                    <button 
-                      type="button" 
-                      className="btn-secondary small"
-                      onClick={generateUsername}
-                      disabled={!formData.name}
-                    >
-                      Generate
-                    </button>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="email">Email (Optional)</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="Client's email (optional)"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="form-section">
-              <h3>Account Credentials</h3>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="password">Password *</label>
-                  <div className="input-with-button">
-                    <input
-                      type="text"
-                      id="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      placeholder="Create a password"
-                      required
-                      minLength="8"
-                    />
-                    <button 
-                      type="button" 
-                      className="btn-secondary small"
-                      onClick={generatePassword}
-                    >
-                      Generate
-                    </button>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="confirmPassword">Confirm Password *</label>
-                  <input
-                    type="text"
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    placeholder="Confirm the password"
-                    required
-                    minLength="8"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="form-actions-page">
-              <button 
-                type="button" 
-                className="btn-secondary"
-                onClick={onBack}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                className="btn-primary"
-                disabled={loading}
-              >
-                {loading ? 'Creating...' : 'Create Client Account'}
-              </button>
-            </div>
-          </form>
-        </div>
+        <ClientCreationForm
+          onClose={() => {
+            setShowClientForm(false);
+            if (onBack) onBack();
+          }}
+          onSuccess={handleClientCreated}
+        />
       </>
     );
   }
@@ -300,83 +182,204 @@ const ClientManagement = ({ onStatsUpdate, onCreateClient, onViewClient, onEditC
   // Render clients list
   return (
     <>
-      {notification && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          autoClose={notification.autoClose !== false}
-          onClose={() => setNotification(null)}
-        />
+      <ErrorMessage 
+        message={errorMessage?.message} 
+        type={errorMessage?.type} 
+        show={!!errorMessage}
+        onClose={() => setErrorMessage(null)}
+        autoClose={true}
+        duration={6000}
+      />
+
+      {/* Delete Confirmation Panel */}
+      {showDeleteConfirm && (
+        <div className="confirmation-overlay">
+          <div className="confirmation-panel">
+            <div className="confirmation-header">
+              <i className="fas fa-exclamation-triangle warning-icon"></i>
+              <h3>Confirm Deletion</h3>
+            </div>
+            <div className="confirmation-body">
+              <p>Are you sure you want to delete <strong>"{clientToDelete?.name}"</strong>?</p>
+              <p className="warning-text">This action cannot be undone and will permanently remove all client data.</p>
+            </div>
+            <div className="confirmation-actions">
+              <button 
+                className="btn-cancel" 
+                onClick={cancelDelete}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-delete" 
+                onClick={confirmDelete}
+                disabled={loading}
+              >
+                {loading ? 'Deleting...' : 'Delete Client'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       <div className="client-management">
         <div className="section-header">
-          <h2 className="section-title">Client Management</h2>
-          <button 
-            className="btn-primary"
-            onClick={onCreateClient}
-          >
-            + Add New Client
-          </button>
+          <h2 className="section-title">{viewMode === 'progress' ? 'Client Progress Overview' : 'Client Management'}</h2>
+          {viewMode === 'list' && (
+            <button 
+              className="add-client-btn"
+              onClick={onCreateClient}
+            >
+              <i className="fas fa-user-plus"></i>
+              <span>Add New Client</span>
+            </button>
+          )}
         </div>
 
-        <div className="clients-list">
-          <h3>Your Clients</h3>
+        <div className="clients-list-container">
           {clients.length === 0 ? (
             <div className="empty-state">
-              <p>No clients yet. Create your first client account to get started!</p>
+              <p>No clients yet. Create your first client to get started.</p>
             </div>
           ) : (
-            <div className="clients-table-container">
-              <table className="clients-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Created</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {clients.map((client) => (
-                    <tr key={client.id}>
-                      <td>
-                        <div className="client-name">
-                          <span className="name">{client.name}</span>
+            <table className={viewMode === 'progress' ? 'progress-table' : 'clean-table'}>
+              <thead>
+                <tr>
+                  <th>Client</th>
+                  <th>Email</th>
+                  {viewMode === 'progress' ? (
+                    <>
+                      <th>Avg Calories</th>
+                      <th>Meals/Day</th>
+                      <th>Goal Rate</th>
+                    </>
+                  ) : (
+                    <>
+                      <th>Subscription</th>
+                      <th>Profile</th>
+                      <th>Joined</th>
+                    </>
+                  )}
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {clients.map((client) => (
+                  <tr key={client.id}>
+                    <td>
+                      <div className="client-info">
+                        <div className="client-initial">
+                          {client.name.charAt(0).toUpperCase()}
                         </div>
-                      </td>
-                      <td>
-                        <span className="username">@{client.username}</span>
-                      </td>
-                      <td>
-                        <span className="email">{client.email || 'No email'}</span>
-                      </td>
-                      <td>
-                        <span className="created-date">
-                          {new Date(client.created_at).toLocaleDateString()}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="table-actions">
+                        <div className="client-details">
+                          <div className="client-name">{client.name}</div>
+                          <div className="client-username">@{client.username}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="text-secondary">{client.email || '—'}</span>
+                    </td>
+                    {viewMode === 'progress' ? (
+                      <>
+                        <td>
+                          <div className="progress-metric">
+                            <div className="metric-icon calories">
+                              <i className="fas fa-fire"></i>
+                            </div>
+                            <div className="metric-value">
+                              {clientProgress[client.id]?.avg_calories || '—'}
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="progress-metric">
+                            <div className="metric-icon meals">
+                              <i className="fas fa-utensils"></i>
+                            </div>
+                            <div className="metric-value">
+                              {clientProgress[client.id]?.avg_meals || '—'}
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="progress-metric">
+                            <div className="metric-icon goal">
+                              <i className="fas fa-trophy"></i>
+                            </div>
+                            <div className="metric-value">
+                              {clientProgress[client.id]?.avg_goal_rate 
+                                ? `${clientProgress[client.id].avg_goal_rate}%`
+                                : '—'}
+                            </div>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td>
+                          <span className="subscription-badge">{client.subscription_type}</span>
+                        </td>
+                        <td>
+                          {client.profile ? (
+                            <span className="status-badge complete">Complete</span>
+                          ) : (
+                            <span className="status-badge incomplete">Incomplete</span>
+                          )}
+                        </td>
+                        <td>
+                          <span className="text-secondary">
+                            {new Date(client.created_at).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric' 
+                            })}
+                          </span>
+                        </td>
+                      </>
+                    )}
+                    <td>
+                      <div className="action-buttons">
+                        {viewMode === 'progress' ? (
                           <button 
-                            className="btn-secondary small"
+                            className="btn-primary progress-btn"
                             onClick={() => onViewClient && onViewClient(client)}
+                            title="View Detailed Progress"
                           >
-                            View
+                            <i className="fas fa-chart-line"></i>
+                            View Progress
                           </button>
-                          <button 
-                            className="btn-secondary small"
-                            onClick={() => onEditClient && onEditClient(client)}
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        ) : (
+                          <>
+                            <button 
+                              className="icon-btn"
+                              onClick={() => onViewClient && onViewClient(client)}
+                              title="View"
+                            >
+                              <i className="fas fa-eye"></i>
+                            </button>
+                            <button 
+                              className="icon-btn"
+                              onClick={() => onEditClient && onEditClient(client)}
+                              title="Edit"
+                            >
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            <button 
+                              className="icon-btn delete"
+                              onClick={() => handleDeleteClient(client)}
+                              title="Delete"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
       </div>

@@ -1,0 +1,203 @@
+/* Error Message Component Styles */
+.error-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  max-width: 400px;
+  min-width: 300px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(10px);
+  animation: slideInRight 0.3s ease-out;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.error-content {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  gap: 12px;
+}
+
+.error-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.error-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirm-btn {
+  background: #f44336;
+  color: white;
+}
+
+.confirm-btn:hover {
+  background: #d32f2f;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.error-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.error-text {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.error-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* Error Type Styles */
+.error-message.error {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+}
+
+.error-message.error .error-icon.error {
+  color: #dc2626;
+}
+
+.error-message.error .error-close {
+  color: #dc2626;
+}
+
+.error-message.error .error-close:hover {
+  background-color: rgba(220, 38, 38, 0.1);
+}
+
+.error-message.success {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border: 1px solid #86efac;
+  color: #16a34a;
+}
+
+.error-message.success .error-icon.success {
+  color: #16a34a;
+}
+
+.error-message.success .error-close {
+  color: #16a34a;
+}
+
+.error-message.success .error-close:hover {
+  background-color: rgba(22, 163, 74, 0.1);
+}
+
+.error-message.warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fbbf24;
+  color: #d97706;
+}
+
+.error-message.warning .error-icon.warning {
+  color: #d97706;
+}
+
+.error-message.warning .error-close {
+  color: #d97706;
+}
+
+.error-message.warning .error-close:hover {
+  background-color: rgba(217, 119, 6, 0.1);
+}
+
+.error-message.info {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 1px solid #93c5fd;
+  color: #2563eb;
+}
+
+.error-message.info .error-icon.info {
+  color: #2563eb;
+}
+
+.error-message.info .error-close {
+  color: #2563eb;
+}
+
+.error-message.info .error-close:hover {
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+/* Animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.error-message.closing {
+  animation: slideOutRight 0.3s ease-in forwards;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .error-message {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+    min-width: auto;
+  }
+  
+  .error-content {
+    padding: 12px 16px;
+  }
+  
+  .error-text {
+    font-size: 13px;
+  }
+}

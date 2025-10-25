@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, Fragment } from 'react';
 import './Auth.css';
+import { API_BASE } from '../config';
+import ErrorMessage from '../components/ErrorMessage';
 
 const SignUp = ({ onNavigate }) => {
   const [formData, setFormData] = useState({
@@ -8,6 +10,8 @@ const SignUp = ({ onNavigate }) => {
     password: '',
     confirmPassword: ''
   });
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -18,14 +22,20 @@ const SignUp = ({ onNavigate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    setIsLoading(true);
     
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      setError({
+        message: 'Passwords do not match. Please ensure both password fields are identical.',
+        type: 'error'
+      });
+      setIsLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/signup', {
+      const response = await fetch(`${API_BASE}/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,17 +53,29 @@ const SignUp = ({ onNavigate }) => {
 
       if (data.success) {
         console.log('Dietitian registered successfully:', data);
+        setError({
+          message: 'Account created successfully! Redirecting to dashboard...',
+          type: 'success'
+        });
         // Store token and redirect to dashboard
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         // Reload the page to trigger authentication state
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1500);
       } else {
-        alert(data.message || 'Registration failed');
+        setError({
+          message: data.message || 'Registration failed. Please check your information and try again.',
+          type: 'error'
+        });
       }
     } catch (error) {
       console.error('Registration error:', error);
-      alert('Registration failed. Please try again.');
+      setError({
+        message: 'Unable to connect to the server. Please check your internet connection and try again.',
+        type: 'error'
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -63,7 +85,16 @@ const SignUp = ({ onNavigate }) => {
   };
 
   return (
-    <div className="auth-container">
+    <Fragment>
+      <ErrorMessage 
+        message={error?.message} 
+        type={error?.type} 
+        show={!!error}
+        onClose={() => setError(null)}
+        autoClose={true}
+        duration={6000}
+      />
+      <div className="auth-container">
       <div className="auth-card compact signup">
         <div className="auth-header compact signup">
           <h1 className="text-primary">
@@ -126,8 +157,12 @@ const SignUp = ({ onNavigate }) => {
             />
           </div>
 
-          <button type="submit" className="btn-primary auth-submit compact signup">
-            Create Professional Account
+          <button 
+            type="submit" 
+            className="btn-primary auth-submit compact signup"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Creating Account...' : 'Create Professional Account'}
           </button>
         </form>
 
@@ -138,7 +173,8 @@ const SignUp = ({ onNavigate }) => {
           </p>
         </div>
       </div>
-    </div>
+      </div>
+    </Fragment>
   );
 };
 

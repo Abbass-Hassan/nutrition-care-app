@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, Fragment } from 'react';
 import './Auth.css';
 import { API_BASE } from '../config';
+import ErrorMessage from '../components/ErrorMessage';
 
 const SignIn = ({ onNavigate }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -17,6 +20,8 @@ const SignIn = ({ onNavigate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    setIsLoading(true);
     
     try {
       const response = await fetch(`${API_BASE}/signin`, {
@@ -41,11 +46,19 @@ const SignIn = ({ onNavigate }) => {
         // Reload the page to trigger authentication state
         window.location.reload();
       } else {
-        alert(data.message || 'Sign in failed');
+        setError({
+          message: data.message || 'Sign in failed. Please check your credentials.',
+          type: 'error'
+        });
       }
     } catch (error) {
       console.error('Sign in error:', error);
-      alert('Sign in failed. Please try again.');
+      setError({
+        message: 'Unable to connect to the server. Please check your internet connection and try again.',
+        type: 'error'
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -55,15 +68,24 @@ const SignIn = ({ onNavigate }) => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card compact">
-        <div className="auth-header compact">
-          <h1 className="text-primary">
-            <span className="logo-icon">🍎</span> NutritionCare
-          </h1>
-          <h2>Welcome Back, Dietitian</h2>
-          <p>Sign in to your professional dashboard to manage your clients</p>
-        </div>
+    <Fragment>
+      <ErrorMessage 
+        message={error?.message} 
+        type={error?.type} 
+        show={!!error}
+        onClose={() => setError(null)}
+        autoClose={true}
+        duration={6000}
+      />
+      <div className="auth-container">
+        <div className="auth-card compact">
+          <div className="auth-header compact">
+            <h1 className="text-primary">
+              <span className="logo-icon">🍎</span> NutritionCare
+            </h1>
+            <h2>Welcome Back, Dietitian</h2>
+            <p>Sign in to your professional dashboard to manage your clients</p>
+          </div>
 
         <form onSubmit={handleSubmit} className="auth-form compact">
           <div className="form-group compact">
@@ -100,8 +122,12 @@ const SignIn = ({ onNavigate }) => {
             <a href="#" className="forgot-password">Forgot password?</a>
           </div>
 
-          <button type="submit" className="btn-primary auth-submit compact">
-            Sign In to Dashboard
+          <button 
+            type="submit" 
+            className="btn-primary auth-submit compact"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Signing In...' : 'Sign In to Dashboard'}
           </button>
         </form>
 
@@ -112,7 +138,8 @@ const SignIn = ({ onNavigate }) => {
           </p>
         </div>
       </div>
-    </div>
+      </div>
+    </Fragment>
   );
 };
 
