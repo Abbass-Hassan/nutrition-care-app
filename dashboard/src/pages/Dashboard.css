@@ -1194,6 +1194,14 @@
 .clean-table thead {
   background: #fafafa;
 }
+.clean-table.sticky thead th { position: sticky; top: 0; background: #fafafa; }
+.th-sortable { cursor: pointer; user-select: none; }
+.table-scroll { max-height: 320px; overflow: auto; border: 1px solid var(--color-border); border-radius: 12px; }
+.select-toolbar { display: flex; justify-content: space-between; align-items: center; margin: 6px 0 8px; }
+.selected-count { color: var(--color-text-secondary); font-size: 14px; }
+.badge { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--color-border); background: #fff; }
+.badge.success { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+.badge.muted { background: #f3f4f6; color: #374151; }
 
 .clean-table th {
   padding: 16px 20px;
@@ -1217,6 +1225,44 @@
 
 .clean-table tbody tr:hover {
   background-color: #f9fafb;
+}
+.clean-table.selectable tbody tr.selected-row {
+  background: #ecfdf5; /* light green */
+}
+.clean-table .col-select { width: 80px; text-align: center; vertical-align: middle; }
+.clean-table td.col-select, .clean-table th.col-select {
+  text-align: center;
+  vertical-align: middle;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.clean-table .col-select input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-primary);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+  margin: 0 auto;
+  display: inline-block;
+  vertical-align: middle;
+}
+.clean-table .col-select input[type="checkbox"]:checked {
+  background: var(--color-primary);
+}
+.clean-table .col-select input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .clean-table td {
@@ -2197,6 +2243,39 @@
   position: relative;
   overflow: hidden;
 }
+
+/* Notifications: specific clients selector */
+.client-select-list {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: #fff;
+}
+.client-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+}
+.client-row:last-child { border-bottom: 0; }
+.client-row:hover { background: #f9fafb; }
+.client-row.selected { background: #f1f5f9; }
+.client-row input { margin-right: 4px; }
+.client-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.client-meta { display: flex; flex-direction: column; }
+.client-name { font-weight: 600; }
+.client-username { color: var(--color-text-secondary); font-size: 12px; }
 
 .client-management .add-client-btn::before {
   content: '';
