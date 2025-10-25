@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MdPeople, MdDashboard, MdLogout, MdArrowBack, MdInventory, MdChat, MdCheckCircle, MdMenu, MdMenuOpen, MdTrendingUp, MdRestaurant } from 'react-icons/md';
+import { MdPeople, MdDashboard, MdLogout, MdArrowBack, MdInventory, MdChat, MdCheckCircle, MdMenu, MdMenuOpen, MdTrendingUp, MdRestaurant, MdNotifications } from 'react-icons/md';
 import ClientManagement from '../components/ClientManagement';
 import ClientProfile from '../components/ClientProfile';
 import ClientEdit from '../components/ClientEdit';
@@ -9,6 +9,7 @@ import FoodProfile from '../components/FoodProfile';
 import FoodEdit from '../components/FoodEdit';
 import FoodApprovals from '../components/FoodApprovals';
 import Chat from '../components/Chat';
+import SendNotification from '../components/SendNotification';
 import './Dashboard.css';
 
 const Dashboard = ({ onSignOut }) => {
@@ -292,6 +293,11 @@ const Dashboard = ({ onSignOut }) => {
           />
         );
       
+      case 'notifications':
+        return (
+          <SendNotification />
+        );
+      
       case 'progress-list':
         return (
           <ClientManagement 
@@ -352,6 +358,10 @@ const Dashboard = ({ onSignOut }) => {
           <div className={`nav-item ${currentView === 'chat' ? 'active' : ''}`} onClick={handleChatNavigation} title="Chat">
             <MdChat className="nav-icon" />
             {!sidebarCollapsed && <span>Chat</span>}
+          </div>
+          <div className={`nav-item ${currentView === 'notifications' ? 'active' : ''}`} onClick={() => setCurrentView('notifications')} title="Notifications">
+            <MdNotifications className="nav-icon" />
+            {!sidebarCollapsed && <span>Notifications</span>}
           </div>
         </nav>
         

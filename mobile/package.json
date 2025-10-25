@@ -17,12 +17,14 @@
     "react": "18.2.0",
     "react-native": "0.73.6",
     "react-native-gesture-handler": "~2.14.0",
+    "react-native-onesignal": "^5.2.13",
     "react-native-safe-area-context": "4.8.2",
     "react-native-screens": "~3.29.0",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "onesignal-expo-plugin": "^2.0.3"
   },
   "private": true
 }

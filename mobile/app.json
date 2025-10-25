@@ -31,11 +31,20 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "eas": { "projectId": "local" }
+      "eas": { "projectId": "local" },
+      "EXPO_PUBLIC_ONESIGNAL_APP_ID": "c5e4f3ad-84d0-40d0-ae1c-a366bb662f3b"
     },
     "experiments": {
       "typedRoutes": false
-    }
+    },
+    "plugins": [
+      [
+        "onesignal-expo-plugin",
+        {
+          "mode": "development"
+        }
+      ]
+    ]
   },
   "expoClient": {
     "extra": {
