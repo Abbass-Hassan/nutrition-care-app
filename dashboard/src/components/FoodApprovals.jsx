@@ -190,66 +190,55 @@ const FoodApprovals = () => {
         />
       )}
 
-      <div className="food-approvals-container">
-        <div className="food-approvals-header">
-          <div className="approvals-header-content">
-            <h1 className="approvals-title">Food Approvals</h1>
-            <p className="approvals-subtitle">Review and approve food items submitted by your clients</p>
+      <div className="food-approvals-page">
+        <div className="approvals-page-header">
+          <div className="page-title-section">
+            <h1>Food Approvals</h1>
+            <p>Review pending food submissions from your clients</p>
           </div>
-          <div className="approvals-summary">
-            <div className="summary-card">
-              <div className="summary-icon">
-                <MdWarning />
-              </div>
-              <div className="summary-content">
-                <span className="summary-number">{pendingFoods.length}</span>
-                <span className="summary-label">Pending Reviews</span>
-              </div>
-            </div>
+          <div className="pending-count">
+            <span className="count-number">{pendingFoods.length}</span>
+            <span className="count-label">Pending</span>
           </div>
         </div>
 
         {pendingFoods.length === 0 ? (
-          <div className="approvals-empty-state">
-            <div className="empty-icon">
+          <div className="no-pending-state">
+            <div className="check-icon">
               <MdCheckCircle />
             </div>
-            <h3 className="empty-title">All Caught Up!</h3>
-            <p className="empty-description">No pending food approvals at the moment.</p>
+            <h3>All Caught Up!</h3>
+            <p>No pending food approvals at the moment.</p>
           </div>
         ) : (
-          <div className="approvals-content">
-            <div className="approvals-grid">
-              {pendingFoods.map((food) => (
-                <div key={food.id} className="approval-card">
-                  <div className="approval-card-header">
-                    <div className="food-image-container">
-                      <div className="food-image-placeholder">
-                        <MdRestaurant />
-                      </div>
+          <div className="approvals-list">
+            {pendingFoods.map((food) => (
+              <div key={food.id} className="approval-item">
+                <div className="item-header">
+                  <div className="food-info">
+                    <div className="food-icon">
+                      <MdRestaurant />
                     </div>
-                    <div className="approval-status">
-                      <span className="status-badge pending">Pending</span>
+                    <div className="food-details">
+                      <h3>{food.name}</h3>
+                      <p>{food.default_serving || '1 serving'}</p>
                     </div>
                   </div>
+                  <div className="status-indicator">
+                    <span className="pending-badge">Pending</span>
+                  </div>
+                </div>
 
-                  <div className="approval-card-body">
-                    <h3 className="food-title">{food.name}</h3>
-                    <p className="food-serving">{food.default_serving || '1 serving'}</p>
-
-                    <div className="client-section">
-                      <div className="client-info">
-                        <div className="client-avatar">
-                          <MdPerson />
-                        </div>
-                        <div className="client-details">
-                          <div className="client-name">{food.created_by_client?.name || 'Unknown Client'}</div>
-                          <div className="client-email">{food.created_by_client?.email || 'N/A'}</div>
-                        </div>
-                      </div>
+                <div className="item-content">
+                  <div className="client-info-row">
+                    <div className="client-avatar-small">
+                      <MdPerson />
                     </div>
-
-                    <div className="submission-info">
+                    <div className="client-text">
+                      <span className="client-name">{food.created_by_client?.name || 'Unknown Client'}</span>
+                      <span className="client-email">{food.created_by_client?.email || 'N/A'}</span>
+                    </div>
+                    <div className="submission-time">
                       <MdAccessTime />
                       <span>
                         {new Date(food.created_at).toLocaleDateString('en-US', {
@@ -260,136 +249,136 @@ const FoodApprovals = () => {
                         })}
                       </span>
                     </div>
+                  </div>
 
-                    <div className="nutrition-grid">
-                      <div className="nutrition-item">
-                        <span className="nutrition-label">Calories</span>
-                        <span className="nutrition-value">{food.calories}</span>
-                      </div>
-                      <div className="nutrition-item">
-                        <span className="nutrition-label">Protein</span>
-                        <span className="nutrition-value">{food.protein || 0}g</span>
-                      </div>
-                      <div className="nutrition-item">
-                        <span className="nutrition-label">Carbs</span>
-                        <span className="nutrition-value">{food.carbs || 0}g</span>
-                      </div>
-                      <div className="nutrition-item">
-                        <span className="nutrition-label">Fat</span>
-                        <span className="nutrition-value">{food.fat || 0}g</span>
-                      </div>
+                  <div className="nutrition-row">
+                    <div className="nutrition-item">
+                      <span className="nutrient-label">Calories</span>
+                      <span className="nutrient-value">{food.calories}</span>
+                    </div>
+                    <div className="nutrition-item">
+                      <span className="nutrient-label">Protein</span>
+                      <span className="nutrient-value">{food.protein || 0}g</span>
+                    </div>
+                    <div className="nutrition-item">
+                      <span className="nutrient-label">Carbs</span>
+                      <span className="nutrient-value">{food.carbs || 0}g</span>
+                    </div>
+                    <div className="nutrition-item">
+                      <span className="nutrient-label">Fat</span>
+                      <span className="nutrient-value">{food.fat || 0}g</span>
                     </div>
                   </div>
-
-                  <div className="approval-card-actions">
-                    <button 
-                      className="approval-btn edit-btn"
-                      onClick={() => handleEdit(food)}
-                    >
-                      <MdEdit />
-                      <span>Edit</span>
-                    </button>
-                    <button 
-                      className="approval-btn approve-btn"
-                      onClick={() => handleApprove(food.id)}
-                    >
-                      <MdCheck />
-                      <span>Approve</span>
-                    </button>
-                    <button 
-                      className="approval-btn reject-btn"
-                      onClick={() => handleReject(food)}
-                    >
-                      <MdClose />
-                      <span>Reject</span>
-                    </button>
-                  </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="item-actions">
+                  <button 
+                    className="action-button edit-button"
+                    onClick={() => handleEdit(food)}
+                  >
+                    <MdEdit />
+                    Edit
+                  </button>
+                  <button 
+                    className="action-button approve-button"
+                    onClick={() => handleApprove(food.id)}
+                  >
+                    <MdCheck />
+                    Approve
+                  </button>
+                  <button 
+                    className="action-button reject-button"
+                    onClick={() => handleReject(food)}
+                  >
+                    <MdClose />
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
         {/* Edit Modal */}
         {showEditModal && (
-          <div className="approval-modal-overlay">
-            <div className="approval-modal">
-              <div className="approval-modal-header">
-                <h3 className="modal-title">Edit Food Details</h3>
+          <div className="modal-backdrop">
+            <div className="modal-container">
+              <div className="modal-header">
+                <h3>Edit Food Details</h3>
                 <button 
-                  className="modal-close-btn"
+                  className="close-button"
                   onClick={() => setShowEditModal(false)}
                 >
                   <MdClose />
                 </button>
               </div>
               
-              <div className="approval-modal-body">
-                <div className="approval-form-group">
-                  <label className="approval-label">Food Name</label>
+              <div className="modal-body">
+                <div className="input-group">
+                  <label>Food Name</label>
                   <input
                     type="text"
                     value={editForm.name}
                     onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                    className="approval-input"
+                    className="text-input"
                   />
                 </div>
                 
-                <div className="approval-form-group">
-                  <label className="approval-label">Serving Size</label>
+                <div className="input-group">
+                  <label>Serving Size</label>
                   <input
                     type="text"
                     value={editForm.default_serving}
                     onChange={(e) => setEditForm({...editForm, default_serving: e.target.value})}
-                    className="approval-input"
+                    className="text-input"
                     placeholder="e.g., 1 cup, 100g"
                   />
                 </div>
 
-                <div className="approval-nutrition-inputs">
-                  <div className="approval-form-group">
-                    <label className="approval-label">Calories</label>
+                <div className="nutrition-inputs">
+                  <div className="input-group">
+                    <label>Calories</label>
                     <input
                       type="number"
                       value={editForm.calories}
                       onChange={(e) => setEditForm({...editForm, calories: e.target.value})}
-                      className="approval-input"
+                      className="number-input"
                       min="0"
                       step="0.1"
                     />
                   </div>
                   
-                  <div className="approval-form-group">
-                    <label className="approval-label">Protein (g)</label>
+                  <div className="input-group">
+                    <label>Protein (g)</label>
                     <input
                       type="number"
                       value={editForm.protein}
                       onChange={(e) => setEditForm({...editForm, protein: e.target.value})}
-                      className="approval-input"
+                      className="number-input"
                       min="0"
                       step="0.1"
                     />
                   </div>
                   
-                  <div className="approval-form-group">
-                    <label className="approval-label">Carbs (g)</label>
+                  <div className="input-group">
+                    <label>Carbs (g)</label>
                     <input
                       type="number"
                       value={editForm.carbs}
                       onChange={(e) => setEditForm({...editForm, carbs: e.target.value})}
-                      className="approval-input"
+                      className="number-input"
                       min="0"
                       step="0.1"
                     />
                   </div>
                   
-                  <div className="approval-form-group">
-                    <label className="approval-label">Fat (g)</label>
+                  <div className="input-group">
+                    <label>Fat (g)</label>
                     <input
                       type="number"
                       value={editForm.fat}
                       onChange={(e) => setEditForm({...editForm, fat: e.target.value})}
-                      className="approval-input"
+                      className="number-input"
                       min="0"
                       step="0.1"
                     />
@@ -397,15 +386,15 @@ const FoodApprovals = () => {
                 </div>
               </div>
 
-              <div className="approval-modal-actions">
+              <div className="modal-footer">
                 <button 
-                  className="approval-btn-cancel"
+                  className="cancel-button"
                   onClick={() => setShowEditModal(false)}
                 >
                   Cancel
                 </button>
                 <button 
-                  className="approval-btn-primary"
+                  className="save-button"
                   onClick={handleEditSubmit}
                 >
                   Save Changes
@@ -417,46 +406,46 @@ const FoodApprovals = () => {
 
         {/* Rejection Modal */}
         {showRejectModal && (
-          <div className="approval-modal-overlay">
-            <div className="approval-modal reject-modal">
-              <div className="approval-modal-header">
+          <div className="modal-backdrop">
+            <div className="modal-container reject-modal">
+              <div className="modal-header">
                 <div className="warning-icon">
                   <MdWarning />
                 </div>
-                <h3 className="modal-title">Reject Food Submission</h3>
+                <h3>Reject Food Submission</h3>
                 <button 
-                  className="modal-close-btn"
+                  className="close-button"
                   onClick={() => setShowRejectModal(false)}
                 >
                   <MdClose />
                 </button>
               </div>
               
-              <div className="approval-modal-body">
-                <p className="rejection-warning">
+              <div className="modal-body">
+                <p className="warning-message">
                   Are you sure you want to reject <strong>"{selectedFood?.name}"</strong>?
                 </p>
-                <div className="approval-form-group">
-                  <label className="approval-label">Reason for rejection (optional)</label>
+                <div className="input-group">
+                  <label>Reason for rejection (optional)</label>
                   <textarea
                     placeholder="Provide feedback to help the client improve their submission..."
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
                     rows="3"
-                    className="approval-textarea"
+                    className="textarea-input"
                   />
                 </div>
               </div>
 
-              <div className="approval-modal-actions">
+              <div className="modal-footer">
                 <button 
-                  className="approval-btn-cancel"
+                  className="cancel-button"
                   onClick={() => setShowRejectModal(false)}
                 >
                   Cancel
                 </button>
                 <button 
-                  className="approval-btn-reject"
+                  className="reject-button"
                   onClick={confirmReject}
                 >
                   Reject Food
