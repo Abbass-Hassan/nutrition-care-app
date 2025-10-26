@@ -13,11 +13,26 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Create a dietitian user
+        $dietitian = User::create([
+            'name' => 'Dr. Sarah Johnson',
+            'email' => 'sarah@dietitian.com',
+            'username' => 'sarah_dietitian',
+            'password' => bcrypt('password123'),
+            'user_type' => 'dietitian',
         ]);
+
+        // Create a client user
+        $client = User::create([
+            'name' => 'John Client',
+            'email' => 'john@client.com',
+            'username' => 'john_client',
+            'password' => bcrypt('password123'),
+            'user_type' => 'client',
+            'dietitian_id' => $dietitian->id,
+        ]);
+
+        // Seed foods for the dietitian
+        $this->call(FoodSeeder::class);
     }
 }

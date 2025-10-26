@@ -10,11 +10,19 @@ const TabButton = ({ label, active, onPress, iconName }) => (
   </TouchableOpacity>
 );
 
-const BottomNav = ({ current, onChange }) => {
+const BottomNav = ({ current, onChange, onAddPress }) => {
   return (
     <View style={styles.container}>
       <TabButton label="Home" iconName="home-outline" active={current === 'home'} onPress={() => onChange('home')} />
-      <TabButton label="Meals" iconName="silverware-fork-knife" active={current === 'meals'} onPress={() => onChange('meals')} />
+      <TabButton label="Diary" iconName="book-open-variant" active={current === 'meals'} onPress={() => onChange('meals')} />
+      
+      {/* Center Add Button */}
+      <TouchableOpacity style={styles.addButton} onPress={onAddPress}>
+        <View style={styles.addButtonInner}>
+          <Text style={styles.addButtonText}>+</Text>
+        </View>
+      </TouchableOpacity>
+      
       <TabButton label="Chat" iconName="message-text-outline" active={current === 'chat'} onPress={() => onChange('chat')} />
       <TabButton label="Settings" iconName="cog-outline" active={current === 'settings'} onPress={() => onChange('settings')} />
     </View>
@@ -37,6 +45,33 @@ const styles = StyleSheet.create({
   label: { fontSize: 12, color: colors.textSecondary, fontWeight: '700' },
   iconActive: { color: colors.primary },
   labelActive: { color: colors.primary },
+  addButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -20,
+  },
+  addButtonInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 4,
+    borderColor: colors.backgroundLight,
+  },
+  addButtonText: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: colors.white,
+    marginTop: -2,
+  },
 });
 
 export default BottomNav; 

@@ -18,12 +18,281 @@ class FoodController extends Controller
     public function index(): JsonResponse
     {
         $foods = Food::where('dietitian_id', Auth::id())
+            ->where('approval_status', 'approved')
             ->orderBy('created_at', 'desc')
             ->get();
 
         return response()->json([
             'success' => true,
             'foods' => $foods
+        ]);
+    }
+
+    /**
+     * Get foods for a client (from their dietitian) - only approved foods.
+     */
+    public function getClientFoods(): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if (!$user->isClient()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only clients can access this endpoint'
+            ], 403);
+        }
+
+        if (!$user->dietitian_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No dietitian assigned'
+            ], 404);
+        }
+
+        // Get dietitian's approved foods + client's approved custom foods
+        $foods = Food::where(function($query) use ($user) {
+                $query->where('dietitian_id', $user->dietitian_id)
+                      ->where('approval_status', 'approved');
+            })
+            ->orWhere(function($query) use ($user) {
+                $query->where('created_by_client_id', $user->id)
+                      ->where('approval_status', 'approved');
+            })
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'foods' => $foods
+        ]);
+    }
+
+    /**
+     * Client submits a custom food for approval.
+     */
+    public function submitClientFood(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if (!$user->isClient()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only clients can submit custom foods'
+            ], 403);
+        }
+
+        if (!$user->dietitian_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No dietitian assigned'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'default_serving' => 'nullable|string|max:255',
+            'calories' => 'required|numeric|min:0',
+            'carbs' => 'nullable|numeric|min:0',
+            'protein' => 'nullable|numeric|min:0',
+            'fat' => 'nullable|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $data = $request->only([
+                'name', 'default_serving', 'calories',
+                'carbs', 'protein', 'fat'
+            ]);
+
+            $data['dietitian_id'] = $user->dietitian_id;
+            $data['created_by_client_id'] = $user->id;
+            $data['category'] = 'Custom Food';
+            $data['default_serving'] = $data['default_serving'] ?? '1 serving';
+            $data['approval_status'] = 'pending';
+            $data['calories'] = (float) $data['calories'];
+            $data['carbs'] = isset($data['carbs']) ? (float) $data['carbs'] : 0;
+            $data['protein'] = isset($data['protein']) ? (float) $data['protein'] : 0;
+            $data['fat'] = isset($data['fat']) ? (float) $data['fat'] : 0;
+
+            $food = Food::create($data);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Food submitted for approval',
+                'food' => $food
+            ], 201);
+
+        } catch (\Exception $e) {
+            \Log::error('Client food submission error:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to submit food for approval.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get pending foods for dietitian approval.
+     */
+    public function getPendingFoods(): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if (!$user->isDietitian()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only dietitians can access this endpoint'
+            ], 403);
+        }
+
+        $pendingFoods = Food::where('dietitian_id', $user->id)
+            ->where('approval_status', 'pending')
+            ->with('createdByClient:id,name,email')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'pending_foods' => $pendingFoods
+        ]);
+    }
+
+    /**
+     * Approve a food.
+     */
+    public function approveFood(string $id): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if (!$user->isDietitian()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only dietitians can approve foods'
+            ], 403);
+        }
+
+        $food = Food::where('dietitian_id', $user->id)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $food->update([
+            'approval_status' => 'approved',
+            'approved_at' => now(),
+            'approved_by_dietitian_id' => $user->id,
+            'rejection_reason' => null
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Food approved successfully',
+            'food' => $food->fresh()
+        ]);
+    }
+
+    /**
+     * Edit a pending food.
+     */
+    public function editPendingFood(Request $request, string $id): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if (!$user->isDietitian()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only dietitians can edit foods'
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'default_serving' => 'nullable|string|max:255',
+            'calories' => 'required|numeric|min:0',
+            'carbs' => 'nullable|numeric|min:0',
+            'protein' => 'nullable|numeric|min:0',
+            'fat' => 'nullable|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $food = Food::where('dietitian_id', $user->id)
+            ->where('id', $id)
+            ->where('approval_status', 'pending')
+            ->firstOrFail();
+
+        $data = $request->only([
+            'name', 'default_serving', 'calories',
+            'carbs', 'protein', 'fat'
+        ]);
+
+        $data['calories'] = (float) $data['calories'];
+        $data['carbs'] = isset($data['carbs']) ? (float) $data['carbs'] : 0;
+        $data['protein'] = isset($data['protein']) ? (float) $data['protein'] : 0;
+        $data['fat'] = isset($data['fat']) ? (float) $data['fat'] : 0;
+
+        $food->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Food updated successfully',
+            'food' => $food->fresh()
+        ]);
+    }
+
+    /**
+     * Reject a food.
+     */
+    public function rejectFood(Request $request, string $id): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if (!$user->isDietitian()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only dietitians can reject foods'
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'reason' => 'nullable|string|max:500'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $food = Food::where('dietitian_id', $user->id)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $food->update([
+            'approval_status' => 'rejected',
+            'rejection_reason' => $request->input('reason'),
+            'approved_at' => null,
+            'approved_by_dietitian_id' => null
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Food rejected',
+            'food' => $food->fresh()
         ]);
     }
 

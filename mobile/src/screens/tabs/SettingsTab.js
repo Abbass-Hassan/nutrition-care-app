@@ -1,13 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../../theme';
 
 const SettingsTab = ({ navigation }) => {
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     Alert.alert('Sign out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Sign Out', style: 'destructive', onPress: () => {
+        text: 'Sign Out', style: 'destructive', onPress: async () => {
+          // Clear all AsyncStorage data
+          await AsyncStorage.clear();
           navigation.reset({ index: 0, routes: [{ name: 'SignIn' }] });
         }
       }

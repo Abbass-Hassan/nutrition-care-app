@@ -20,7 +20,12 @@ class Food extends Model
         'protein',
         'fat',
         'photo_path',
-        'notes'
+        'notes',
+        'approval_status',
+        'created_by_client_id',
+        'rejection_reason',
+        'approved_at',
+        'approved_by_dietitian_id',
     ];
 
     protected $appends = [
@@ -32,6 +37,7 @@ class Food extends Model
         'carbs' => 'float',
         'protein' => 'float',
         'fat' => 'float',
+        'approved_at' => 'datetime',
     ];
 
     /**
@@ -40,6 +46,38 @@ class Food extends Model
     public function dietitian(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dietitian_id');
+    }
+
+    /**
+     * Get the client who created this food.
+     */
+    public function createdByClient(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_client_id');
+    }
+
+    /**
+     * Get the dietitian who approved this food.
+     */
+    public function approvedByDietitian(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by_dietitian_id');
+    }
+
+    /**
+     * Scope for approved foods only.
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('approval_status', 'approved');
+    }
+
+    /**
+     * Scope for pending foods only.
+     */
+    public function scopePending($query)
+    {
+        return $query->where('approval_status', 'pending');
     }
 
     /**

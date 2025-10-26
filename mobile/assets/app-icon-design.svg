@@ -1,0 +1,45 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#388E3C;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#81C784;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#66BB6A;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Rounded square background -->
+  <rect width="1024" height="1024" rx="180" fill="url(#bgGradient)"/>
+  
+  <!-- Main nutrition symbol - apple with leaf -->
+  <g transform="translate(512, 512)">
+    <!-- Apple body -->
+    <path d="M-150,-50 Q-180,-150 -120,-220 Q-50,-250 20,-240 Q90,-250 160,-220 Q220,-150 190,-50 Q180,80 150,150 Q120,200 50,220 Q0,230 -50,220 Q-120,200 -150,150 Q-180,80 -150,-50 Z" 
+          fill="#FFFFFF" opacity="0.95"/>
+    
+    <!-- Apple shine -->
+    <ellipse cx="-60" cy="-80" rx="50" ry="80" fill="#FFFFFF" opacity="0.3"/>
+    
+    <!-- Leaf -->
+    <path d="M30,-240 Q80,-280 120,-240 Q140,-200 120,-160 Q100,-180 80,-200 Q60,-220 30,-240 Z" 
+          fill="url(#leafGradient)"/>
+    
+    <!-- Stem -->
+    <rect x="20" y="-250" width="20" height="40" rx="10" fill="#795548"/>
+    
+    <!-- Heart symbol inside apple (nutrition focus) -->
+    <path d="M0,-20 Q-30,-50 -60,-40 Q-80,-20 -80,10 Q-80,40 -50,70 Q-20,100 0,120 Q20,100 50,70 Q80,40 80,10 Q80,-20 60,-40 Q30,-50 0,-20 Z" 
+          fill="#FF9800" opacity="0.8"/>
+  </g>
+  
+  <!-- Circular accents (nutrition molecules) -->
+  <circle cx="200" cy="200" r="30" fill="#FFFFFF" opacity="0.2"/>
+  <circle cx="824" cy="300" r="25" fill="#FFFFFF" opacity="0.15"/>
+  <circle cx="150" cy="800" r="35" fill="#FFFFFF" opacity="0.2"/>
+  <circle cx="850" cy="750" r="28" fill="#FFFFFF" opacity="0.18"/>
+</svg>
+
+

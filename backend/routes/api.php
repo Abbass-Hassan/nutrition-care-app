@@ -50,4 +50,31 @@ Route::get('/health', function () {
 // Food management routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('foods', App\Http\Controllers\FoodController::class);
+    Route::get('/client-foods', [App\Http\Controllers\FoodController::class, 'getClientFoods']);
+    
+    // Client food submission
+    Route::post('/client-foods/submit', [App\Http\Controllers\FoodController::class, 'submitClientFood']);
+    
+    // Dietitian food approval
+    Route::get('/pending-foods', [App\Http\Controllers\FoodController::class, 'getPendingFoods']);
+    Route::post('/foods/{id}/approve', [App\Http\Controllers\FoodController::class, 'approveFood']);
+    Route::post('/foods/{id}/reject', [App\Http\Controllers\FoodController::class, 'rejectFood']);
+    Route::put('/foods/{id}/edit-pending', [App\Http\Controllers\FoodController::class, 'editPendingFood']);
+    
+        // Client management
+        Route::post('/clients', [App\Http\Controllers\ClientController::class, 'createClient']);
+        Route::get('/clients', [App\Http\Controllers\ClientController::class, 'getClients']);
+        Route::get('/clients/{id}', [App\Http\Controllers\ClientController::class, 'getClient']);
+        Route::put('/clients/{id}/update', [App\Http\Controllers\ClientController::class, 'updateClient']);
+        Route::delete('/clients/{id}', [App\Http\Controllers\ClientController::class, 'deleteClient']);
+        
+        // Client nutrition goals (for mobile app)
+        Route::get('/nutrition-goals', [App\Http\Controllers\ClientController::class, 'getNutritionGoals']);
+        
+        // Daily Progress Tracking
+        Route::post('/progress/daily', [App\Http\Controllers\ProgressController::class, 'saveDailyProgress']);
+        Route::get('/progress/daily', [App\Http\Controllers\ProgressController::class, 'getDailyProgress']);
+        Route::get('/progress/clients', [App\Http\Controllers\ProgressController::class, 'getAllClientsProgress']);
+        Route::get('/progress/clients/{clientId}', [App\Http\Controllers\ProgressController::class, 'getClientProgress']);
+        Route::get('/progress/clients/{clientId}/weekly', [App\Http\Controllers\ProgressController::class, 'getWeeklySummary']);
 });

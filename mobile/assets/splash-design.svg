@@ -1,0 +1,78 @@
+<svg width="1284" height="2778" viewBox="0 0 1284 2778" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="splashBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#F5F7FA;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F5F7FA;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#388E3C;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#81C784;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#66BB6A;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1284" height="2778" fill="url(#splashBg)"/>
+  
+  <!-- Center icon -->
+  <g transform="translate(642, 1200)">
+    <!-- Circular background with shadow -->
+    <circle cx="0" cy="0" r="280" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="0" cy="0" r="260" fill="url(#iconGradient)"/>
+    
+    <!-- Apple with leaf -->
+    <g transform="scale(1.2)">
+      <!-- Apple body -->
+      <path d="M-100,-30 Q-120,-100 -80,-150 Q-30,-170 15,-160 Q60,-170 110,-150 Q150,-100 130,-30 Q120,50 100,100 Q80,135 35,150 Q0,155 -35,150 Q-80,135 -100,100 Q-120,50 -100,-30 Z" 
+            fill="#FFFFFF" opacity="0.95"/>
+      
+      <!-- Apple shine -->
+      <ellipse cx="-40" cy="-55" rx="35" ry="55" fill="#FFFFFF" opacity="0.3"/>
+      
+      <!-- Leaf -->
+      <path d="M20,-160 Q55,-190 85,-160 Q95,-135 85,-110 Q70,-125 55,-140 Q40,-150 20,-160 Z" 
+            fill="url(#leafGrad)"/>
+      
+      <!-- Stem -->
+      <rect x="15" y="-170" width="12" height="25" rx="6" fill="#795548"/>
+      
+      <!-- Heart symbol -->
+      <path d="M0,-15 Q-20,-35 -40,-28 Q-55,-15 -55,5 Q-55,25 -35,45 Q-15,65 0,80 Q15,65 35,45 Q55,25 55,5 Q55,-15 40,-28 Q20,-35 0,-15 Z" 
+            fill="#FF9800" opacity="0.85"/>
+    </g>
+  </g>
+  
+  <!-- App name -->
+  <text x="642" y="1600" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="700" fill="#4CAF50" text-anchor="middle">
+    Nutrition Care
+  </text>
+  
+  <text x="642" y="1680" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="400" fill="#757575" text-anchor="middle">
+    Your Health Journey
+  </text>
+  
+  <!-- Decorative elements - nutrition molecules -->
+  <g opacity="0.15">
+    <circle cx="200" cy="500" r="40" fill="#4CAF50"/>
+    <circle cx="1050" cy="700" r="35" fill="#4CAF50"/>
+    <circle cx="150" cy="2200" r="45" fill="#4CAF50"/>
+    <circle cx="1100" cy="2300" r="38" fill="#4CAF50"/>
+    <circle cx="300" cy="1800" r="30" fill="#81C784"/>
+    <circle cx="950" cy="1900" r="33" fill="#81C784"/>
+  </g>
+  
+  <!-- Loading indicator placeholder area -->
+  <g transform="translate(642, 2400)">
+    <!-- Three dots for loading animation -->
+    <circle cx="-60" cy="0" r="12" fill="#4CAF50" opacity="0.6"/>
+    <circle cx="0" cy="0" r="12" fill="#4CAF50" opacity="0.8"/>
+    <circle cx="60" cy="0" r="12" fill="#4CAF50" opacity="0.6"/>
+  </g>
+</svg>
+
+

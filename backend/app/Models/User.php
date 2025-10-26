@@ -25,6 +25,7 @@ class User extends Authenticatable
         'password',
         'user_type',
         'dietitian_id',
+        'subscription_type',
     ];
 
     /**
@@ -81,5 +82,50 @@ class User extends Authenticatable
     public function clientChats(): HasMany
     {
         return $this->hasMany(Chat::class, 'client_id');
+    }
+
+    /**
+     * Get the client's profile.
+     */
+    public function profile()
+    {
+        return $this->hasOne(ClientProfile::class);
+    }
+
+    /**
+     * Get the client's nutrition targets.
+     */
+    public function nutritionTargets()
+    {
+        return $this->hasMany(NutritionTarget::class);
+    }
+
+    public function dailyProgress(): HasMany
+    {
+        return $this->hasMany(DailyProgress::class);
+    }
+
+    /**
+     * Get the client's active nutrition target.
+     */
+    public function activeNutritionTarget()
+    {
+        return $this->hasOne(NutritionTarget::class)->where('is_active', true)->latest();
+    }
+
+    /**
+     * Get the client's measurements.
+     */
+    public function measurements()
+    {
+        return $this->hasMany(Measurement::class);
+    }
+
+    /**
+     * Get the client's blood tests.
+     */
+    public function bloodTests()
+    {
+        return $this->hasMany(BloodTest::class);
     }
 }

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "nutrition-care-mobile",
+    "name": "Nutrition Care",
     "slug": "nutrition-care-mobile",
     "version": "1.0.0",
     "sdkVersion": "50.0.0",
@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F5F7FA"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -19,19 +19,23 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.nutrition-care-mobile"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "backgroundColor": "#4CAF50"
+      },
+      "package": "com.anonymous.nutrition_care_mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "eas": { "projectId": "local" },
+      "eas": {
+        "projectId": "local"
+      },
       "EXPO_PUBLIC_ONESIGNAL_APP_ID": "c5e4f3ad-84d0-40d0-ae1c-a366bb662f3b"
     },
     "experiments": {
