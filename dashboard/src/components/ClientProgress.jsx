@@ -15,6 +15,13 @@ const ClientProgress = ({ clientId, clientName, onBack }) => {
   useEffect(() => {
     if (clientId) {
       loadMonthData();
+      
+      // Refresh progress every 30 seconds
+      const interval = setInterval(() => {
+        loadMonthData();
+      }, 30000);
+      
+      return () => clearInterval(interval);
     }
   }, [clientId, selectedDate]);
 

@@ -23,7 +23,14 @@ Route::post('/signup', [AuthController::class, 'signUp']);
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        $user = $request->user();
+        
+        // For clients, load profile and nutrition target
+        if ($user->isClient()) {
+            $user->load(['profile', 'activeNutritionTarget']);
+        }
+        
+        return $user;
     });
 
     // Clients (dietitian-only) - controller already enforces access

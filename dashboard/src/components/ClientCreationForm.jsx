@@ -275,9 +275,30 @@ const ClientCreationForm = ({ onClose, onSuccess }) => {
         break;
         
       case 5: // Nutrition Targets
-        if (formData.daily_calorie_target && (isNaN(formData.daily_calorie_target) || formData.daily_calorie_target < 500 || formData.daily_calorie_target > 10000)) {
+        if (!formData.daily_calorie_target || formData.daily_calorie_target === '') {
+          newErrors.daily_calorie_target = 'Daily calorie target is required';
+        } else if (isNaN(formData.daily_calorie_target) || formData.daily_calorie_target < 500 || formData.daily_calorie_target > 10000) {
           newErrors.daily_calorie_target = 'Daily calorie target must be between 500 and 10000';
         }
+        
+        if (!formData.carbs_target || formData.carbs_target === '') {
+          newErrors.carbs_target = 'Carbs target is required';
+        } else if (isNaN(formData.carbs_target) || formData.carbs_target < 0 || formData.carbs_target > 1000) {
+          newErrors.carbs_target = 'Carbs target must be between 0 and 1000 g';
+        }
+        
+        if (!formData.protein_target || formData.protein_target === '') {
+          newErrors.protein_target = 'Protein target is required';
+        } else if (isNaN(formData.protein_target) || formData.protein_target < 0 || formData.protein_target > 1000) {
+          newErrors.protein_target = 'Protein target must be between 0 and 1000 g';
+        }
+        
+        if (!formData.fat_target || formData.fat_target === '') {
+          newErrors.fat_target = 'Fat target is required';
+        } else if (isNaN(formData.fat_target) || formData.fat_target < 0 || formData.fat_target > 1000) {
+          newErrors.fat_target = 'Fat target must be between 0 and 1000 g';
+        }
+        
         if (formData.carbs_percentage && (isNaN(formData.carbs_percentage) || formData.carbs_percentage < 0 || formData.carbs_percentage > 100)) {
           newErrors.carbs_percentage = 'Carbs percentage must be between 0 and 100';
         }
@@ -343,8 +364,21 @@ const ClientCreationForm = ({ onClose, onSuccess }) => {
     if (Object.keys(allErrors).length > 0) {
       setErrors(allErrors);
       // Don't show popup notification - field errors are enough
-      // Just navigate to first step with errors
-      setCurrentStep(1);
+      // Navigate to first step with errors
+      const errorKeys = Object.keys(allErrors);
+      if (errorKeys.some(key => ['name', 'username', 'email', 'password', 'password_confirmation', 'subscription_type'].includes(key))) {
+        setCurrentStep(1);
+      } else if (errorKeys.some(key => ['age', 'gender', 'height', 'weight', 'goal'].includes(key))) {
+        setCurrentStep(2);
+      } else if (errorKeys.some(key => ['initial_weight', 'body_fat_percentage', 'muscle_percentage'].includes(key))) {
+        setCurrentStep(3);
+      } else if (errorKeys.some(key => ['hba1c', 'ldl', 'hdl', 'total_cholesterol', 'fasting_blood_sugar', 'triglycerides'].includes(key))) {
+        setCurrentStep(4);
+      } else if (errorKeys.some(key => ['daily_calorie_target', 'carbs_target', 'protein_target', 'fat_target', 'carbs_percentage', 'protein_percentage', 'fat_percentage'].includes(key))) {
+        setCurrentStep(5);
+      } else {
+        setCurrentStep(1);
+      }
       if (formRef.current) {
         formRef.current.scrollTop = 0;
       }
@@ -497,48 +531,47 @@ const ClientCreationForm = ({ onClose, onSuccess }) => {
             />
             {errors.email && <span className="error-text">{Array.isArray(errors.email) ? errors.email[0] : errors.email}</span>}
           </div>
-        <div className="form-group">
-          <label>Subscription Type *</label>
-          <select
-            value={formData.subscription_type}
-            onChange={(e) => handleInputChange('subscription_type', e.target.value)}
-            className="form-input"
-            required
-          >
-            <option value="free">Free</option>
-            <option value="paid">Paid</option>
-          </select>
         </div>
-        <div className={`form-group ${errors.password ? 'error' : ''}`}>
-          <label>Password *</label>
-          <input
-            type="password"
-            value={formData.password}
-            onChange={(e) => handleInputChange('password', e.target.value)}
-            className={`form-input ${errors.password ? 'error' : ''}`}
-            required
-          />
-          {errors.password && <span className="error-text">{Array.isArray(errors.password) ? errors.password[0] : errors.password}</span>}
-        </div>
-      </div>
 
-      <div className="form-row">
-        <div className={`form-group ${errors.password_confirmation ? 'error' : ''}`}>
-          <label>Confirm Password *</label>
-          <input
-            type="password"
-            value={formData.password_confirmation}
-            onChange={(e) => handleInputChange('password_confirmation', e.target.value)}
-            className={`form-input ${errors.password_confirmation ? 'error' : ''}`}
-            required
-          />
-          {errors.password_confirmation && <span className="error-text">{Array.isArray(errors.password_confirmation) ? errors.password_confirmation[0] : errors.password_confirmation}</span>}
+        <div className="form-row">
+          <div className="form-group">
+            <label>Subscription Type *</label>
+            <select
+              value={formData.subscription_type}
+              onChange={(e) => handleInputChange('subscription_type', e.target.value)}
+              className="form-input"
+              required
+            >
+              <option value="free">Free</option>
+              <option value="paid">Paid</option>
+            </select>
+          </div>
+          <div className={`form-group ${errors.password ? 'error' : ''}`}>
+            <label>Password *</label>
+            <input
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleInputChange('password', e.target.value)}
+              className={`form-input ${errors.password ? 'error' : ''}`}
+              required
+            />
+            {errors.password && <span className="error-text">{Array.isArray(errors.password) ? errors.password[0] : errors.password}</span>}
+          </div>
         </div>
-        <div className="form-group"></div>
-        <div className="form-group"></div>
-        <div className="form-group"></div>
-        <div className="form-group"></div>
-      </div>
+
+        <div className="form-row">
+          <div className={`form-group ${errors.password_confirmation ? 'error' : ''}`}>
+            <label>Confirm Password *</label>
+            <input
+              type="password"
+              value={formData.password_confirmation}
+              onChange={(e) => handleInputChange('password_confirmation', e.target.value)}
+              className={`form-input ${errors.password_confirmation ? 'error' : ''}`}
+              required
+            />
+            {errors.password_confirmation && <span className="error-text">{Array.isArray(errors.password_confirmation) ? errors.password_confirmation[0] : errors.password_confirmation}</span>}
+          </div>
+        </div>
     </div>
   );
 };
@@ -919,7 +952,7 @@ const ClientCreationForm = ({ onClose, onSuccess }) => {
       
       <div className="form-row">
         <div className={`form-group ${errors.daily_calorie_target ? 'error' : ''}`}>
-          <label>Daily Calorie Target (kcal)</label>
+          <label>Daily Calorie Target (kcal) *</label>
           <input
             type="number"
             value={formData.daily_calorie_target}
@@ -927,6 +960,7 @@ const ClientCreationForm = ({ onClose, onSuccess }) => {
             className={`form-input ${errors.daily_calorie_target ? 'error' : ''}`}
             min="500"
             max="10000"
+            required
           />
           {errors.daily_calorie_target && <span className="error-text">{Array.isArray(errors.daily_calorie_target) ? errors.daily_calorie_target[0] : errors.daily_calorie_target}</span>}
         </div>
@@ -947,16 +981,18 @@ const ClientCreationForm = ({ onClose, onSuccess }) => {
         <h4>Macronutrient Targets</h4>
         
         <div className="form-row">
-          <div className="form-group">
-            <label>Carbs Target (g)</label>
+          <div className={`form-group ${errors.carbs_target ? 'error' : ''}`}>
+            <label>Carbs Target (g) *</label>
             <input
               type="number"
               value={formData.carbs_target}
               onChange={(e) => handleInputChange('carbs_target', e.target.value)}
-              className="form-input"
+              className={`form-input ${errors.carbs_target ? 'error' : ''}`}
               min="0"
               max="1000"
+              required
             />
+            {errors.carbs_target && <span className="error-text">{Array.isArray(errors.carbs_target) ? errors.carbs_target[0] : errors.carbs_target}</span>}
           </div>
           <div className={`form-group ${errors.carbs_percentage ? 'error' : ''}`}>
             <label>Carbs %</label>
@@ -973,16 +1009,18 @@ const ClientCreationForm = ({ onClose, onSuccess }) => {
         </div>
 
         <div className="form-row">
-          <div className="form-group">
-            <label>Protein Target (g)</label>
+          <div className={`form-group ${errors.protein_target ? 'error' : ''}`}>
+            <label>Protein Target (g) *</label>
             <input
               type="number"
               value={formData.protein_target}
               onChange={(e) => handleInputChange('protein_target', e.target.value)}
-              className="form-input"
+              className={`form-input ${errors.protein_target ? 'error' : ''}`}
               min="0"
               max="1000"
+              required
             />
+            {errors.protein_target && <span className="error-text">{Array.isArray(errors.protein_target) ? errors.protein_target[0] : errors.protein_target}</span>}
           </div>
           <div className={`form-group ${errors.protein_percentage ? 'error' : ''}`}>
             <label>Protein %</label>
@@ -999,16 +1037,18 @@ const ClientCreationForm = ({ onClose, onSuccess }) => {
         </div>
 
         <div className="form-row">
-          <div className="form-group">
-            <label>Fat Target (g)</label>
+          <div className={`form-group ${errors.fat_target ? 'error' : ''}`}>
+            <label>Fat Target (g) *</label>
             <input
               type="number"
               value={formData.fat_target}
               onChange={(e) => handleInputChange('fat_target', e.target.value)}
-              className="form-input"
+              className={`form-input ${errors.fat_target ? 'error' : ''}`}
               min="0"
               max="1000"
+              required
             />
+            {errors.fat_target && <span className="error-text">{Array.isArray(errors.fat_target) ? errors.fat_target[0] : errors.fat_target}</span>}
           </div>
           <div className={`form-group ${errors.fat_percentage ? 'error' : ''}`}>
             <label>Fat %</label>

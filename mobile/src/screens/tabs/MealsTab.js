@@ -213,31 +213,36 @@ const MealsTab = forwardRef((props, ref) => {
 
   const saveDailyProgress = async (loggedFoods) => {
     try {
+      // Safety check: ensure loggedFoods is an array
+      if (!loggedFoods || !Array.isArray(loggedFoods)) {
+        console.log('No logged foods data to save progress');
+        return;
+      }
+      
       const dateString = formatDate(selectedDate);
       const dateEntry = loggedFoods.find(entry => entry.date === dateString);
       
-      if (!dateEntry || !dateEntry.meals) {
-        return; // No data to save
-      }
-
-      // Calculate daily totals
+      // Initialize daily totals to 0
       let totalCalories = 0;
       let totalProtein = 0;
       let totalCarbs = 0;
       let totalFat = 0;
       let mealsCount = 0;
 
-      Object.values(dateEntry.meals).forEach(mealFoods => {
-        if (Array.isArray(mealFoods)) {
-          mealFoods.forEach(food => {
-            totalCalories += (food.calories || 0) * (food.quantity || 1);
-            totalProtein += (food.protein || 0) * (food.quantity || 1);
-            totalCarbs += (food.carbs || 0) * (food.quantity || 1);
-            totalFat += (food.fat || 0) * (food.quantity || 1);
-          });
-          if (mealFoods.length > 0) mealsCount++;
-        }
-      });
+      // Calculate totals only if there's data
+      if (dateEntry && dateEntry.meals) {
+        Object.values(dateEntry.meals).forEach(mealFoods => {
+          if (Array.isArray(mealFoods)) {
+            mealFoods.forEach(food => {
+              totalCalories += (food.calories || 0) * (food.quantity || 1);
+              totalProtein += (food.protein || 0) * (food.quantity || 1);
+              totalCarbs += (food.carbs || 0) * (food.quantity || 1);
+              totalFat += (food.fat || 0) * (food.quantity || 1);
+            });
+            if (mealFoods.length > 0) mealsCount++;
+          }
+        });
+      }
 
       // FIX: Get water intake for the correct date
       const waterKey = await getUserStorageKey('waterIntake');
@@ -388,7 +393,7 @@ const MealsTab = forwardRef((props, ref) => {
     setShowEditModal(true);
   };
 
-  const handleEditFood = () => {
+  const handleEditFood = async () => {
     if (!editingLog) return;
 
     const dateString = formatDate(selectedDate);
@@ -403,6 +408,10 @@ const MealsTab = forwardRef((props, ref) => {
       };
       
       saveLoggedFoods(newLoggedFoods);
+      
+      // Recalculate and save daily progress after editing
+      await saveDailyProgress(newLoggedFoods);
+      
       setShowEditModal(false);
       setEditingLog(null);
       Alert.alert('Updated', `${editingLog.food.name} has been updated!`);
@@ -421,7 +430,7 @@ const MealsTab = forwardRef((props, ref) => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             const dateString = formatDate(selectedDate);
             const newLoggedFoods = [...loggedFoods];
             const dateEntry = newLoggedFoods.find(entry => entry.date === dateString);
@@ -444,6 +453,10 @@ const MealsTab = forwardRef((props, ref) => {
               }
               
               saveLoggedFoods(newLoggedFoods);
+              
+              // Recalculate and save daily progress after deletion
+              await saveDailyProgress(newLoggedFoods);
+              
               Alert.alert('Deleted', `${foodName} has been removed`);
             }
           }
@@ -968,6 +981,9 @@ const MealsTab = forwardRef((props, ref) => {
           <View style={styles.addPanelFull}>
             <View style={styles.addPanelHeader}>
               <Text style={styles.addPanelTitle}>Add Food</Text>
+              <TouchableOpacity onPress={() => setShowAddPanel(false)} style={styles.closeButton}>
+                <Icon name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
             </View>
 
             <View style={styles.searchBar}>
@@ -1186,6 +1202,9 @@ const MealsTab = forwardRef((props, ref) => {
           <View style={styles.compactModalContainer}>
             <View style={styles.compactModalHeader}>
               <Text style={styles.compactModalTitle}>Create Custom Food</Text>
+              <TouchableOpacity onPress={() => setShowCreateFoodModal(false)} style={styles.compactCloseButton}>
+                <Icon name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.compactModalBody} showsVerticalScrollIndicator={false}>
@@ -1912,6 +1931,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     color: colors.text,
+    flex: 1,
+  },
+  closeButton: {
+    padding: 4,
   },
   searchBar: {
     paddingHorizontal: 20,
@@ -2137,6 +2160,9 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   compactModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 16,
@@ -2147,7 +2173,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: colors.text,
-    textAlign: 'center',
+    flex: 1,
+  },
+  compactCloseButton: {
+    padding: 4,
   },
   compactModalBody: {
     paddingHorizontal: 24,
@@ -2163,14 +2192,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   compactTextField: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 16,
-    backgroundColor: colors.backgroundLight,
+    backgroundColor: '#FFFFFF',
     color: colors.text,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   compactModalFooter: {
     flexDirection: 'row',
@@ -2182,29 +2216,39 @@ const styles = StyleSheet.create({
   },
   compactCancelButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.backgroundLight,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   compactCancelText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    fontWeight: '700',
+    color: colors.primary,
   },
   compactAddButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
     backgroundColor: colors.primary,
     alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   compactAddText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: colors.backgroundLight,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   extraordinaryModalBody: {
     flex: 1,

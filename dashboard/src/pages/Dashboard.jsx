@@ -35,7 +35,34 @@ const Dashboard = ({ onSignOut }) => {
     
     // Poll for pending foods every 30 seconds
     const interval = setInterval(fetchPendingFoodsCount, 30000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Separate useEffect for window resize
+  useEffect(() => {
+    const handleResize = () => {
+      console.log('Resize detected, width:', window.innerWidth);
+      if (window.innerWidth < 1024) {
+        console.log('Setting sidebar to collapsed');
+        setSidebarCollapsed(true);
+      } else if (window.innerWidth >= 1024) {
+        console.log('Setting sidebar to expanded');
+        setSidebarCollapsed(false);
+      }
+    };
+
+    // Check on mount
+    handleResize();
+
+    // Listen for resize events
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const fetchClientStats = async () => {
